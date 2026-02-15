@@ -21,7 +21,7 @@ const UserSchema = new mongoose.Schema({
   tier: { 
     type: String, 
     enum: ['Personal', 'Pro', 'Enterprise'], 
-    default: 'Personal' // Default free plan
+    default: 'Personal'
   },
   
   billing: {

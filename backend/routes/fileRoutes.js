@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require('../middleware/authMiddleware');
 const File = require('../models/File');
 const { upload } = require('../config/cloudinaryConfig'); 
+const logActivity = require('../utils/activityLogger');
 
 // --- FIX: IMPORT CLOUDINARY DIRECTLY ---
 const cloudinary = require('cloudinary').v2;
@@ -36,6 +37,7 @@ router.post('/create-folder', auth, async (req, res) => {
       publicId: ''
     });
     await folder.save();
+    await logActivity(req.user.id, "CREATE_FOLDER", `Created directory: ${fileName}`);
     res.json({ success: true, folder });
   } catch (err) {
     console.error("Create Folder Error:", err);
@@ -59,8 +61,8 @@ router.post('/upload', auth, upload.single('file'), async (req, res) => {
       parentId: parentId || 'root',
       isFolder: false
     });
-
     await newFile.save();
+    await logActivity(req.user.id, "UPLOAD", `Uploaded file: ${newFile.fileName}`);  
     res.status(200).json({ success: true, file: newFile });
   } catch (err) {
     console.error("Upload Error:", err);
@@ -78,6 +80,7 @@ router.put('/move/:id', auth, async (req, res) => {
       { new: true }
     );
     if (!file) return res.status(404).json({ success: false, msg: 'File not found' });
+    await logActivity(req.user.id, "MOVE", `Relocated file: ${file.fileName}`);
     res.json({ success: true, file });
   } catch (err) {
     console.error("Move Error:", err);

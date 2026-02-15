@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const logActivity = require('../utils/activityLogger');
 
 // --- Identity Registration Protocol ---
 // This handles creating a new user and authorizing them instantly
@@ -61,9 +62,7 @@ exports.register = async (req, res) => {
     });
   }
 };
-
-// --- Secure Login Protocol ---
-// Generates a session token if credentials match
+// --- LOGIN CONTROLLER (Updated) ---
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -79,6 +78,10 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ success: false, msg: 'Invalid Credentials.' });
     }
+
+    // LOG ACTIVITY: Successful Login
+    // We pass 'req' so the logger can capture the IP address
+    await logActivity(user.id, "LOGIN", "User accessed the Sanctum", req);
 
     // Generate JWT Access Token valid for 8 hours
     const token = jwt.sign(

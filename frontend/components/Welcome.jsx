@@ -39,11 +39,11 @@ const Welcome = ({ onLogin, isDarkMode, toggleTheme }) => {
 
   const faqs = [
     {
-      q: "What is Vault.io?",
-      a: "Vault.io is a military-grade digital sovereign sanctum designed to protect your most sensitive documents through advanced client-side encryption and zero-knowledge storage protocols."
+      q: "What is VaultX?",
+      a: "VaultX is a military-grade digital sovereign sanctum designed to protect your most sensitive documents through advanced client-side encryption and zero-knowledge storage protocols."
     },
     {
-      q: "What does Vault.io Premium offer?",
+      q: "What does VaultX Premium offer?",
       a: "Premium provides 50GB of secure storage, AI-powered security auditing, biometric hardware key support, multi-device synchronization, and priority recovery services for elite users."
     },
     {
@@ -51,11 +51,11 @@ const Welcome = ({ onLogin, isDarkMode, toggleTheme }) => {
       a: "End-to-end encryption grants security and data ownership to the users. It ensures that their data remains private and inaccessible to anyone without appropriate authentication."
     },
     {
-      q: "What platforms is Vault.io available on?",
+      q: "What platforms is VaultX available on?",
       a: "We are available as a secure Web platform, mobile apps for iOS and Android, and native desktop applications for Windows, macOS, and Linux to ensure your vault is always within reach."
     },
     {
-      q: "What security methods does Vault.io use?",
+      q: "What security methods does VaultX use?",
       a: "We utilize AES-256 for data at rest, TLS 1.3 for data in transit, and Argon2 for secure key derivation. We also strictly support FIDO2/WebAuthn for hardware-level biometric authentication."
     }
   ];
@@ -63,56 +63,61 @@ const Welcome = ({ onLogin, isDarkMode, toggleTheme }) => {
   return (
     <div className="min-h-screen bg-[#F1EFEC] text-[#030303] selection:bg-[#123458]/30 overflow-x-hidden font-inter transition-colors duration-300"> 
       {/* Navbar */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-500 border-b ${isScrolled ? 'bg-[#F1EFEC]/80 backdrop-blur-xl border-[#D4C9BE] shadow-sm py-3' : 'bg-transparent border-transparent py-6'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-500 border-b ${isScrolled ? 'bg-[#F1EFEC]/80 backdrop-blur-xl border-[#D4C9BE] shadow-sm py-3' : 'bg-transparent border-transparent py-2'}`}>
         <div className="max-w-vault mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-12">
+            
+            {/* --- 1. DESKTOP LOGO UPDATE --- */}
             <div 
               onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className="flex items-center gap-2 font-black text-[#123458] text-2xl tracking-wideer cursor-pointer"
+              className="flex items-center gap-2 cursor-pointer"
             >
-              <ShieldCheck size={32} strokeWidth={2.5} />
-              <span className="font-serif">Vault.io</span>
+              <img 
+                src="/logo.png" 
+                alt="VaultX Logo" 
+               className="h-16 w-auto object-contain scale-150 ml-2"// Adjust h-10 to match your preferred size
+              />
             </div>
 
-          <div className="hidden lg:flex items-center gap-8 text-sm font-bold">
-  {/* Home is now the Active Button (Full Navy) */}
-  <button 
-    onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
-    className="text-[#123458] transition-colors"
-  >
-    Home
-  </button>
+            <div className="hidden lg:flex items-center gap-8 text-sm font-bold">
+              {/* Home is now the Active Button (Full Navy) */}
+              <button 
+                onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                className="text-[#123458] transition-colors"
+              >
+                Home
+              </button>
 
-  {/* Features is Muted */}
-  <button 
-    onClick={() => navigate('/features')} 
-    className="text-[#123458]/70 hover:text-[#123458] transition-colors"
-  >
-    Features
-  </button>
+              {/* Features is Muted */}
+              <button 
+                onClick={() => navigate('/features')} 
+                className="text-[#123458]/70 hover:text-[#123458] transition-colors"
+              >
+                Features
+              </button>
 
-  {/* FAQ is Muted */}
-  <button 
-    onClick={() => {
-      navigate('/'); // Go to Welcome page
-      setTimeout(() => {
-        const element = document.getElementById('faq');
-        if (element) element.scrollIntoView({ behavior: 'smooth' });
-      }, 100); // Small delay to ensure component is mounted
-    }} 
-    className="text-[#123458]/70 hover:text-[#123458] transition-colors"
-  >
-    FAQ
-  </button>
+              {/* FAQ is Muted */}
+              <button 
+                onClick={() => {
+                  navigate('/'); // Go to Welcome page
+                  setTimeout(() => {
+                    const element = document.getElementById('faq');
+                    if (element) element.scrollIntoView({ behavior: 'smooth' });
+                  }, 100); // Small delay to ensure component is mounted
+                }} 
+                className="text-[#123458]/70 hover:text-[#123458] transition-colors"
+              >
+                FAQ
+              </button>
 
-  {/* Contact is now Muted (70% opacity) */}
-  <button 
-    onClick={() => { navigate('/contact'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
-    className="text-[#123458]/70 hover:text-[#123458] transition-colors"
-  >
-    Contact
-  </button>
-</div>
+              {/* Contact is now Muted (70% opacity) */}
+              <button 
+                onClick={() => { navigate('/contact'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                className="text-[#123458]/70 hover:text-[#123458] transition-colors"
+              >
+                Contact
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
@@ -130,10 +135,16 @@ const Welcome = ({ onLogin, isDarkMode, toggleTheme }) => {
         {/* Mobile Menu Overlay */}
         <div className={`fixed inset-0 z-[60] bg-[#F1EFEC] transition-all duration-500 lg:hidden ${isMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}`}>
           <div className="flex items-center justify-between px-6 py-6 border-b border-[#D4C9BE] bg-[#F1EFEC]">
-            <div onClick={() => { setIsMenuOpen(false); navigate('/'); }} className="flex items-center gap-2 font-black text-[#123458] text-2xl tracking-wideer">
-              <ShieldCheck size={32} strokeWidth={2.5} />
-              <span className="font-serif">Vault.io</span>
+            
+            {/* --- 2. MOBILE MENU LOGO UPDATE --- */}
+            <div onClick={() => { setIsMenuOpen(false); navigate('/'); }} className="flex items-center gap-2 cursor-pointer">
+               <img 
+                src="/logo.png" 
+                alt="VaultX Logo" 
+                className="h-10 w-auto object-contain" 
+              />
             </div>
+            
             <button onClick={() => setIsMenuOpen(false)} className="p-2 text-[#123458] bg-[#D4C9BE]/20 rounded-xl transition-colors">
               <X size={28} />
             </button>
@@ -236,7 +247,7 @@ const Welcome = ({ onLogin, isDarkMode, toggleTheme }) => {
         <div className="max-w-vault mx-auto text-center">
           <div className="max-w-5xl mx-auto mb-16">
             <h2 className="text-4xl md:text-6xl font-black mb-12 tracking-wider text-[#123458] font-serif">Manage files privately with confidence</h2>
-            <p className="text-xl text-[#123458]/70 leading-relaxed font-medium">Vault.io keeps your data accessible without compromising its security thanks to zero-knowledge architecture and limitless end-to-end encryption.</p>
+            <p className="text-xl text-[#123458]/70 leading-relaxed font-medium">VaultX keeps your data accessible without compromising its security thanks to zero-knowledge architecture and limitless end-to-end encryption.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

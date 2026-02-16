@@ -58,7 +58,7 @@ const Sidebar = ({ collapsed, setCollapsed, onLogout }) => {
             <div className="bg-[#D4C9BE]/10 p-1.5 rounded-lg group-hover:bg-[#D4C9BE]/20 transition-colors">
               <ShieldCheck size={24} className="text-[#D4C9BE]" />
             </div>
-            <span className="font-serif font-black text-[#F1EFEC] text-xl tracking-wider">Vault.io</span>
+            <span className="font-serif font-black text-[#F1EFEC] text-xl tracking-wider">VaultX</span>
           </div>
         )}
         

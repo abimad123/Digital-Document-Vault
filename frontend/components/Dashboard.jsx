@@ -5,7 +5,6 @@ import {
   Folder, RefreshCw, Trash2, Move, ExternalLink, ChevronLeft
 } from 'lucide-react';
 
-// --- IMPORTS ---
 import Topbar from './Topbar';
 import Sidebar from './Sidebar';
 import Toast from './Toast'; 
@@ -13,15 +12,13 @@ import MoveModal from './MoveModal';
 import Profile from './ProfilePage';       
 import ActivityLog from './ActivityLog'; 
 
-const Dashboard = ({ onLogout }) => { // Removed 'user' prop since we fetch it here now
-  // --- 1. DASHBOARD STATE ---
+const Dashboard = ({ onLogout }) => {
   const [vaultFiles, setVaultFiles] = useState([]);
   const [currentFolderId, setCurrentFolderId] = useState('root');
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [loading, setLoading] = useState(false);
   
-  // --- NEW: USER STATE (Fixes Topbar Issue) ---
   const [currentUser, setCurrentUser] = useState({ 
     name: 'Loading...', 
     tier: 'Free',
@@ -30,7 +27,6 @@ const Dashboard = ({ onLogout }) => { // Removed 'user' prop since we fetch it h
 
   const fileInputRef = useRef(null);
   
-  // --- UI STATES ---
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [moveData, setMoveData] = useState({ isOpen: false, fileId: null, fileName: '' });
 
@@ -39,12 +35,10 @@ const Dashboard = ({ onLogout }) => { // Removed 'user' prop since we fetch it h
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
   };
 
-  // --- 2. DATA FETCHING (FILES & USER) ---
   const fetchVaultContent = async () => {
     setLoading(true);
     const token = localStorage.getItem('vaultToken');
     try {
-      // A. Fetch Files
       const filesRes = await fetch('http://localhost:5000/api/files/all', {
         headers: { 'Authorization': `Bearer ${token}` }
       });

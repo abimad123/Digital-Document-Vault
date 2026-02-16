@@ -110,25 +110,63 @@ const ProfilePage = () => {
                   <div className="w-10 h-10 bg-[#F1EFEC] rounded-xl flex items-center justify-center text-[#123458]"><Smartphone size={20} /></div>
                   <span className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-100 flex items-center gap-1"><CheckCircle size={10} /> Active</span>
                 </div>
-                <div><p className="text-[10px] font-black uppercase tracking-widest text-[#D4C9BE] mb-1">Security Level</p><h4 className="text-lg font-bold text-[#123458]">High (Biometric)</h4></div>
+                <div><p className="text-[10px] font-black uppercase tracking-widest text-[#D4C9BE] mb-1">Security Level</p><h4 className="text-lg font-bold text-[#123458]">High</h4></div>
               </div>
             </div>
-            {/* Storage Card */}
-            <div className="bg-[#123458] rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-[#D4C9BE]/10 blur-[80px] rounded-full -mr-16 -mt-16"></div>
-              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-[#D4C9BE] text-xs font-bold uppercase tracking-widest"><Cloud size={16} /> Storage Node</div>
-                  <div><h3 className="text-3xl font-serif font-black mb-1">Vault Capacity</h3><p className="text-[#D4C9BE]/60 text-sm">Encrypted storage allocated to your account.</p></div>
-                  <div className="flex items-baseline gap-1"><span className="text-4xl font-black">{profile.stats.storageUsed}</span><span className="text-lg text-[#D4C9BE]/60">MB Used</span></div>
-                </div>
-                <div className="w-full md:w-72 bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-[#D4C9BE] mb-3"><span>{profile.stats.storagePercent}% Full</span><span>{profile.stats.storageLimit} MB Total</span></div>
-                  <div className="h-3 w-full bg-black/30 rounded-full overflow-hidden mb-4"><div className="h-full bg-gradient-to-r from-[#D4C9BE] to-white rounded-full transition-all duration-1000" style={{ width: `${profile.stats.storagePercent}%` }}></div></div>
-                  <button className="w-full py-3 bg-white text-[#123458] rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-[#D4C9BE] transition-colors">Manage Storage</button>
-                </div>
-              </div>
-            </div>
+           {/* Storage Usage Card */}
+<div className="bg-[#123458] rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
+  <div className="absolute top-0 right-0 w-64 h-64 bg-[#D4C9BE]/10 blur-[80px] rounded-full -mr-16 -mt-16"></div>
+  
+  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 text-[#D4C9BE] text-xs font-bold uppercase tracking-widest">
+        <Cloud size={16} /> Storage Node
+      </div>
+      <div>
+        <h3 className="text-3xl font-serif font-black mb-1">Vault Capacity</h3>
+        <p className="text-[#D4C9BE]/60 text-sm">Encrypted storage allocated to your account.</p>
+      </div>
+      <div className="flex items-baseline gap-1">
+        <span className="text-4xl font-black">{profile.stats.storageUsed}</span>
+        <span className="text-lg text-[#D4C9BE]/60">MB Used</span>
+      </div>
+    </div>
+
+    <div className="w-full md:w-72 bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
+      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-[#D4C9BE] mb-3">
+        {/* Handle Unlimited Display */}
+        {profile.stats.storageLimit === 'Unlimited' ? (
+          <>
+            <span>Unlimited Access</span>
+            <span className="text-emerald-400">∞</span>
+          </>
+        ) : (
+          <>
+            <span>{profile.stats.storagePercent}% Full</span>
+            <span>{profile.stats.storageLimit} MB Total</span>
+          </>
+        )}
+      </div>
+
+      {/* Progress Bar - Infinite Gradient for Enterprise, Calculated for others */}
+      <div className="h-3 w-full bg-black/30 rounded-full overflow-hidden mb-4">
+        {profile.stats.storageLimit === 'Unlimited' ? (
+          <div className="h-full w-full bg-gradient-to-r from-[#123458] via-[#D4C9BE] to-[#123458] animate-pulse"></div>
+        ) : (
+          <div 
+            className="h-full bg-gradient-to-r from-[#D4C9BE] to-white rounded-full transition-all duration-1000" 
+            style={{ width: `${profile.stats.storagePercent}%` }}
+          ></div>
+        )}
+      </div>
+      
+      <button className="w-full py-3 bg-white text-[#123458] rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-[#D4C9BE] transition-colors">
+        Manage Storage
+      </button>
+    </div>
+  </div>
+</div>
+
           </div>
         );
 

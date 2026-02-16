@@ -20,7 +20,8 @@ const UserSchema = new mongoose.Schema({
   },
   tier: { 
     type: String, 
-    enum: ['Personal', 'Pro', 'Enterprise'], 
+    // FIX: Changed 'Pro' to 'Professional' to match frontend
+    enum: ['Personal', 'Professional', 'Enterprise'], 
     default: 'Personal'
   },
   
@@ -31,12 +32,8 @@ const UserSchema = new mongoose.Schema({
     isPaid: { type: Boolean, default: false }
   },
 
-  // --- VERIFICATION PROTOCOL ---
   isVerified: { type: Boolean, default: false },
-  verificationToken: String,
-  verificationTokenExpire: Date
-}, { 
-  timestamps: true 
+  createdAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('User', UserSchema);

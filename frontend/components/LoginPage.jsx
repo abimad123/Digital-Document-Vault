@@ -72,7 +72,7 @@ const LoginPage = ({ onLoginSuccess }) => {
           <div className="bg-[#F1EFEC] p-2.5 rounded-2xl shadow-xl shadow-black/20 text-[#123458] group-hover:scale-110 transition-transform">
             <ShieldCheck size={28} strokeWidth={2.5} />
           </div>
-          <span className="text-2xl font-black tracking-widest text-[#F1EFEC] font-serif">Vault.io</span>
+          <span className="text-2xl font-black tracking-widest text-[#F1EFEC] font-serif">VaultX</span>
         </div>
 
         <div className="space-y-8 z-10 relative animate-content-smooth">
@@ -137,7 +137,7 @@ const LoginPage = ({ onLoginSuccess }) => {
                   onChange={handleInputChange}
                   onFocus={() => setFocusedField('email')}
                   onBlur={() => setFocusedField(null)}
-                  placeholder="alex@vault.io"
+                  placeholder="name@gmail.com"
                   className="w-full bg-[#D4C9BE]/10 border-2 border-[#D4C9BE] rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#123458] transition-all font-semibold text-[#030303] shadow-inner"
                 />
               </div>

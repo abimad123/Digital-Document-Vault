@@ -44,11 +44,11 @@ const FeaturesPage = ({ onLogin, isDarkMode, toggleTheme }) => {
 
   const faqs = [
     {
-      q: "What is Vault.io?",
-      a: "Vault.io is a military-grade digital sovereign sanctum designed to protect your most sensitive documents through advanced client-side encryption and zero-knowledge storage protocols."
+      q: "What is VaultX?",
+      a: "VaultX is a military-grade digital sovereign sanctum designed to protect your most sensitive documents through advanced client-side encryption and zero-knowledge storage protocols."
     },
     {
-      q: "What does Vault.io Premium offer?",
+      q: "What does VaultX Premium offer?",
       a: "Premium provides 50GB of secure storage, AI-powered security auditing, biometric hardware key support, multi-device synchronization, and priority recovery services for elite users."
     },
     {
@@ -56,11 +56,11 @@ const FeaturesPage = ({ onLogin, isDarkMode, toggleTheme }) => {
       a: "End-to-end encryption grants security and data ownership to the users. It ensures that their data remains private and inaccessible to anyone without appropriate authentication."
     },
     {
-      q: "What platforms is Vault.io available on?",
+      q: "What platforms is VaultX available on?",
       a: "We are available as a secure Web platform, mobile apps for iOS and Android, and native desktop applications for Windows, macOS, and Linux to ensure your vault is always within reach."
     },
     {
-      q: "What security methods does Vault.io use?",
+      q: "What security methods does VaultX use?",
       a: "We utilize AES-256 for data at rest, TLS 1.3 for data in transit, and Argon2 for secure key derivation. We also strictly support FIDO2/WebAuthn for hardware-level biometric authentication."
     }
   ];
@@ -73,20 +73,21 @@ const FeaturesPage = ({ onLogin, isDarkMode, toggleTheme }) => {
         className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-500 border-b ${
           isScrolled 
             ? 'bg-[#F1EFEC]/80 backdrop-blur-xl border-[#D4C9BE] shadow-sm py-3' 
-            : 'bg-transparent border-transparent py-6'
+            : 'bg-transparent border-transparent py-2'
         }`}
       >
         <div className="max-w-vault mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-12">
+            {/* --- 1. DESKTOP LOGO UPDATE --- */}
             <div 
-              onClick={() => {
-                navigate('/');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="flex items-center gap-2 font-black text-[#123458] text-2xl tracking-wideer cursor-pointer"
+              onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className="flex items-center gap-2 cursor-pointer"
             >
-              <ShieldCheck size={32} strokeWidth={2.5} />
-              <span className="font-serif">Vault.io</span>
+              <img 
+                src="/logo.png" 
+                alt="VaultX Logo" 
+               className="h-16 w-auto object-contain scale-150 ml-2"// Adjust h-10 to match your preferred size
+              />
             </div>
 
          <div className="hidden lg:flex items-center gap-8 text-sm font-bold">
@@ -157,7 +158,7 @@ const FeaturesPage = ({ onLogin, isDarkMode, toggleTheme }) => {
                className="flex items-center gap-2 font-black text-[#123458] text-2xl tracking-wideer"
             >
               <ShieldCheck size={32} strokeWidth={2.5} />
-              <span className="font-serif">Vault.io</span>
+              <span className="font-serif">VaultX</span>
             </div>
             <button 
               onClick={() => setIsMenuOpen(false)}
@@ -247,11 +248,11 @@ const FeaturesPage = ({ onLogin, isDarkMode, toggleTheme }) => {
           <div className="max-w-5xl mx-auto relative z-10">
             <div className="mb-16 space-y-4 text-center md:text-left">
               <h2 className="text-4xl md:text-5xl font-black text-[#F1EFEC] tracking-wider font-serif">Unlock secure cloud with end-to-end encryption</h2>
-              <p className="text-lg text-[#D4C9BE] max-w-3xl leading-relaxed font-medium">Whether for business or personal privacy, benefit from Vault.io's zero-knowledge architecture and industrial-grade end-to-end encryption.</p>
+              <p className="text-lg text-[#D4C9BE] max-w-3xl leading-relaxed font-medium">Whether for business or personal privacy, benefit from VaultX's zero-knowledge architecture and industrial-grade end-to-end encryption.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-12 gap-x-10">
               {[
-                { title: "Supporting all files", desc: "Vault.io works with all file types. Big or small, documents or folders.", icon: Database },
+                { title: "Supporting all files", desc: "VaultX works with all file types. Big or small, documents or folders.", icon: Database },
                 { title: "Cross-platform sync", desc: "Enjoy privacy on all your devices. Access via browser or native apps.", icon: Smartphone },
                 { title: "Share privately", desc: "Share encrypted files via protected links or invite specific viewers.", icon: Share2 },
                 { title: "Private cloud storage", desc: "Your data remains secure and recoverable even if your device is lost.", icon: Cloud },

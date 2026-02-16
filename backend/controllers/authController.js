@@ -10,7 +10,7 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password, tier, cardData } = req.body;
 
-    // Check for existing identity in the vault
+    // 1. Check if user exists
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ 
@@ -19,18 +19,18 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Initialize new user with automatic verification enabled
+    // 2. Initialize new user
     user = new User({
       name,
       email,
       password,
       tier: tier || 'Personal',
-      isVerified: true, // Verification protocol bypassed for instant access
-      verificationToken: undefined,
-      verificationTokenExpire: undefined
+      isVerified: true, // Auto-verify for instant access
     });
 
-    // Process billing data for Professional/Enterprise tiers
+    // 3. SECURE BILLING LOGIC
+    // If Professional/Enterprise, save card data. 
+    // If Personal, we still set isPaid: true but leave card fields empty.
     if (tier !== 'Personal' && cardData) {
       user.billing = {
         cardNumber: cardData.cardNumber,
@@ -39,16 +39,28 @@ exports.register = async (req, res) => {
         isPaid: true
       };
     } else {
-      // Personal tier is free and marked as paid by default
-      user.billing = { isPaid: true };
+      user.billing = {
+        cardNumber: undefined, // Explicitly undefined to avoid schema validation issues
+        expiry: undefined,
+        cvc: undefined,
+        isPaid: true // Free tier is considered "paid" / active
+      };
     }
 
-    // Encrypt password using Bcrypt
-    const salt = await bcrypt.genSalt(12);
+    // 4. Hash Password
+    const salt = await bcrypt.genSalt(12); // Using 12 rounds for better security
     user.password = await bcrypt.hash(password, salt);
 
-    // Save the authorized user to the MongoDB vault
+    // 5. Save User
     await user.save();
+
+    // 6. Log Activity (Optional but recommended)
+    try {
+      const logActivity = require('../utils/activityLogger');
+      await logActivity(user._id, "REGISTER", `New ${user.tier} identity created`);
+    } catch (e) {
+      console.log("Activity log failed silently");
+    }
 
     res.status(201).json({ 
       success: true, 
@@ -59,10 +71,12 @@ exports.register = async (req, res) => {
     console.error("Registry Error:", err);
     res.status(500).json({ 
       success: false, 
-      msg: 'System Error: Registry node failure.' 
+      msg: err.message || 'System Error: Registry node failure.' 
     });
   }
 };
+
+
 // --- LOGIN CONTROLLER (Updated) ---
 exports.login = async (req, res) => {
   try {
@@ -98,46 +112,55 @@ exports.login = async (req, res) => {
   }
 };
 
+// --- GET CURRENT USER (With Tier-Based Storage Logic) ---
 exports.getMe = async (req, res) => {
   try {
     const File = require('../models/File');
-    
-    // 1. Get User
     const user = await User.findById(req.user.id).select('-password');
     
-    // 2. Calculate Storage
+    // 1. Calculate Storage Used
     const files = await File.find({ user: req.user.id });
     let totalSizeMB = 0;
     files.forEach(file => { totalSizeMB += parseFloat(file.fileSize) || 0; });
 
-    // 3. DETERMINE REAL PLAN [FIXED LOGIC]
-    // If 'user.tier' is empty in DB, default to 'personal'
-    const tier = user.tier || 'personal'; 
+    // 2. Define Tier Logic
+    const tier = user.tier || 'Personal'; 
     const planName = tier.toUpperCase() + ' PLAN'; 
     
-    // 4. CALCULATE RENEWAL (Join Date + 1 Year)
-    // We use the account creation date (user.createdAt) as the start date
+    // 3. Renewal Date
     const joinDate = new Date(user.createdAt);
     const renewalDate = new Date(joinDate);
-    renewalDate.setFullYear(renewalDate.getFullYear() + 1); // Add 1 year
-    
-    const formattedRenewal = renewalDate.toLocaleDateString('en-US', { 
-      year: 'numeric', month: 'short', day: 'numeric' 
-    });
+    renewalDate.setFullYear(renewalDate.getFullYear() + 1);
+
+    // 4. STORAGE LIMIT LOGIC (The New Part)
+    let limitMB = 1024; // Default Personal: 1GB
+    let percent = 0;
+
+    if (tier === 'Professional') {
+      limitMB = 15360; // 15 GB (15 * 1024)
+    } else if (tier === 'Enterprise') {
+      limitMB = 'Unlimited'; // Special flag
+    }
+
+    // Calculate Percentage (Handle Unlimited case)
+    if (limitMB === 'Unlimited') {
+      percent = 0; // Bar stays empty or static for unlimited
+    } else {
+      percent = Math.min((totalSizeMB / limitMB) * 100, 100).toFixed(1);
+    }
 
     res.json({
       success: true,
       user: {
         ...user._doc,
-        plan: planName,          // Will show "PERSONAL PLAN" or "PROFESSIONAL PLAN"
-        renewalDate: formattedRenewal 
+        plan: planName,
+        renewalDate: renewalDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
       },
       stats: {
         fileCount: files.length,
         storageUsed: totalSizeMB.toFixed(2),
-        // Set limit: 1GB for Personal, 10GB for Professional
-        storageLimit: tier === 'professional' ? 10240 : 1024, 
-        storagePercent: Math.min((totalSizeMB / (tier === 'professional' ? 10240 : 1024)) * 100, 100).toFixed(1)
+        storageLimit: limitMB,
+        storagePercent: percent
       }
     });
   } catch (err) {

@@ -62,21 +62,21 @@ const ContactPage = ({ isDarkMode, toggleTheme }) => {
     {
       title: "Global Support",
       desc: "Get technical help with your vault.",
-      info: "support@vault.io",
+      info: "support@VaultX",
       icon: LifeBuoy,
       color: "bg-[#123458]"
     },
     {
       title: "Sales Inquiries",
       desc: "For enterprise pricing and solutions.",
-      info: "enterprise@vault.io",
+      info: "enterprise@VaultX",
       icon: Building2,
       color: "bg-[#123458]"
     },
     {
       title: "Press & Media",
       desc: "Official inquiries and branding info.",
-      info: "press@vault.io",
+      info: "press@VaultX",
       icon: Globe,
       color: "bg-[#123458]"
     }
@@ -89,20 +89,21 @@ const ContactPage = ({ isDarkMode, toggleTheme }) => {
         className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-500 border-b ${
           isScrolled 
             ? 'bg-[#F1EFEC]/80 backdrop-blur-xl border-[#D4C9BE] shadow-sm py-3' 
-            : 'bg-transparent border-transparent py-6'
+            : 'bg-transparent border-transparent py-2'
         }`}
       >
         <div className="max-w-vault mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-12">
+            {/* --- 1. DESKTOP LOGO UPDATE --- */}
             <div 
-              onClick={() => {
-                navigate('/');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="flex items-center gap-2 font-black text-[#123458] text-2xl tracking-wideer cursor-pointer"
+              onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className="flex items-center gap-2 cursor-pointer"
             >
-              <ShieldCheck size={32} strokeWidth={2.5} />
-              <span className="font-serif">Vault.io</span>
+              <img 
+                src="/logo.png" 
+                alt="VaultX Logo" 
+               className="h-16 w-auto object-contain scale-150 ml-2"// Adjust h-10 to match your preferred size
+              />
             </div>
 
         <div className="hidden lg:flex items-center gap-8 text-sm font-bold">
@@ -173,7 +174,7 @@ const ContactPage = ({ isDarkMode, toggleTheme }) => {
                className="flex items-center gap-2 font-black text-[#123458] text-2xl tracking-wideer cursor-pointer"
             >
               <ShieldCheck size={32} strokeWidth={2.5} />
-              <span className="font-serif">Vault.io</span>
+              <span className="font-serif">VaultX</span>
             </div>
             <button 
               onClick={() => setIsMenuOpen(false)}
@@ -331,7 +332,7 @@ const ContactPage = ({ isDarkMode, toggleTheme }) => {
                   value={formState.name}
                   onChange={(e) => setFormState({...formState, name: e.target.value})}
                   type="text" 
-                  placeholder="Alex Morgan" 
+                  placeholder="Alex" 
                   className="w-full bg-[#F1EFEC] border border-[#D4C9BE] rounded-2xl py-4 px-6 focus:outline-none focus:ring-4 focus:ring-[#D4C9BE]/20 focus:border-[#F1EFEC] transition-all font-semibold shadow-sm text-[#030303] placeholder-[#123458]/40"
                 />
               </div>
@@ -342,7 +343,7 @@ const ContactPage = ({ isDarkMode, toggleTheme }) => {
                   value={formState.email}
                   onChange={(e) => setFormState({...formState, email: e.target.value})}
                   type="email" 
-                  placeholder="alex@vault.io" 
+                  placeholder="alex@gmail.com" 
                   className="w-full bg-[#F1EFEC] border border-[#D4C9BE] rounded-2xl py-4 px-6 focus:outline-none focus:ring-4 focus:ring-[#D4C9BE]/20 focus:border-[#F1EFEC] transition-all font-semibold shadow-sm text-[#030303] placeholder-[#123458]/40"
                 />
               </div>

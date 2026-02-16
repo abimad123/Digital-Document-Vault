@@ -21,7 +21,7 @@ const Footer = () => {
           <div className="lg:col-span-2 space-y-8">
             <div className="flex items-center gap-2 font-bold text-[#F1EFEC] text-2xl tracking-tight">
               <ShieldCheck size={32} strokeWidth={2.5} />
-              <span className="font-serif">Vault.io</span>
+              <span className="font-serif">VaultX</span>
             </div>
             <p className="text-[#D4C9BE] text-sm leading-relaxed max-w-sm">
               Empowering individuals and enterprises through advanced cryptographic sovereignty. 

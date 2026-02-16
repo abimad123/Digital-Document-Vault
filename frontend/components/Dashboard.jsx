@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { 
-  Plus, CloudUpload, Star, Info, FolderPlus, File, 
+  Plus, CloudUpload, FolderPlus, File, 
   Folder, RefreshCw, Trash2, Move, ExternalLink, ChevronLeft
 } from 'lucide-react';
 
@@ -10,8 +10,11 @@ import Topbar from './Topbar';
 import Sidebar from './Sidebar';
 import Toast from './Toast'; 
 import MoveModal from './MoveModal';
+import Profile from './ProfilePage';       // New Import
+import ActivityLog from './ActivityLog'; // New Import
 
 const Dashboard = ({ user, onLogout }) => {
+  // --- 1. DASHBOARD STATE ---
   const [vaultFiles, setVaultFiles] = useState([]);
   const [currentFolderId, setCurrentFolderId] = useState('root');
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
@@ -19,8 +22,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
 
   const fileInputRef = useRef(null);
-  const menuRef = useRef(null);
-
+  
   // --- UI STATES ---
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [moveData, setMoveData] = useState({ isOpen: false, fileId: null, fileName: '' });
@@ -30,7 +32,7 @@ const Dashboard = ({ user, onLogout }) => {
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
   };
 
-  // --- 1. DATA FETCHING ---
+  // --- 2. DATA FETCHING ---
   const fetchVaultContent = async () => {
     setLoading(true);
     const token = localStorage.getItem('vaultToken');
@@ -49,7 +51,7 @@ const Dashboard = ({ user, onLogout }) => {
 
   useEffect(() => { fetchVaultContent(); }, []);
 
-  // --- 2. DELETE LOGIC ---
+  // --- 3. ACTION HANDLERS ---
   const handleDelete = async (fileId) => {
     if (!window.confirm("Purge this item from the sanctum?")) return;
     
@@ -69,7 +71,6 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
-  // --- 3. FOLDER CREATION ---
   const handleCreateFolder = async () => {
     const folderName = prompt("Enter new folder name:");
     if (!folderName) return;
@@ -92,7 +93,6 @@ const Dashboard = ({ user, onLogout }) => {
     setIsAddMenuOpen(false);
   };
 
-  // --- 4. UPLOAD LOGIC ---
   const onUpload = async (fileObject) => {
     setLoading(true);
     const formData = new FormData();
@@ -121,7 +121,6 @@ const Dashboard = ({ user, onLogout }) => {
     if (file) onUpload(file);
   };
 
-  // --- 5. MOVE LOGIC ---
   const handleMoveInit = (fileId, fileName) => {
     const folders = vaultFiles.filter(f => f.isFolder && f._id !== fileId);
     if (folders.length === 0) return triggerToast("No target folders available", "error");
@@ -155,110 +154,113 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
-  // --- 6. FILE BROWSER COMPONENT ---
-  const FileBrowser = () => {
+  // --- 4. DOCUMENTS VIEW COMPONENT ---
+  // This bundles the "Add Sidebar" + "File Grid" so we can route to it
+  const DocumentsView = () => {
     const displayedItems = vaultFiles.filter(f => f.parentId === currentFolderId);
 
     return (
-      <main 
-        onDragOver={(e) => e.preventDefault()} 
-        onDrop={handleDrop}
-        className="flex-1 flex flex-col p-8 relative bg-[#F1EFEC] min-w-0"
-      >
-        <div className="flex items-center gap-2 mb-8 text-[#123458]">
-          <button onClick={() => setCurrentFolderId('root')} className="font-black text-xs uppercase tracking-widest hover:underline">Root</button>
-          {currentFolderId !== 'root' && (
-            <>
-              <ChevronLeft size={14} />
-              <span className="font-bold text-xs opacity-50">Inside Folder</span>
-            </>
+      <div className="flex-1 flex overflow-hidden">
+        {/* Inner Add Sidebar */}
+        <aside className="w-64 bg-white border-r p-6 hidden md:flex flex-col gap-4">
+          <button onClick={() => setIsAddMenuOpen(!isAddMenuOpen)} className="w-full bg-[#123458] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 transition-all">
+            <Plus size={20} /> Add Item
+          </button>
+          
+          {isAddMenuOpen && (
+            <div className="bg-[#F1EFEC] rounded-xl p-2 border border-[#D4C9BE]/50 space-y-1 animate-in fade-in slide-in-from-top-2">
+              <button onClick={handleCreateFolder} className="w-full text-left px-4 py-2 hover:bg-[#D4C9BE] rounded-lg flex items-center gap-2 text-sm font-bold text-[#123458]">
+                <FolderPlus size={16}/> New Folder
+              </button>
+              <button onClick={() => fileInputRef.current.click()} className="w-full text-left px-4 py-2 hover:bg-[#D4C9BE] rounded-lg flex items-center gap-2 text-sm font-bold text-[#123458]">
+                <CloudUpload size={16}/> Upload File
+              </button>
+              <input type="file" ref={fileInputRef} onChange={(e) => onUpload(e.target.files[0])} className="hidden" />
+            </div>
           )}
-        </div>
+        </aside>
 
-        {loading ? (
-          <div className="flex-1 flex items-center justify-center"><RefreshCw className="animate-spin" size={48} /></div>
-        ) : displayedItems.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-            <CloudUpload size={64} className="text-[#D4C9BE]" />
-            <h2 className="text-xl font-bold text-[#123458]">This directory is empty.</h2>
+        {/* File Browser Grid */}
+        <main 
+          onDragOver={(e) => e.preventDefault()} 
+          onDrop={handleDrop}
+          className="flex-1 flex flex-col p-8 relative bg-[#F1EFEC] min-w-0 overflow-y-auto"
+        >
+          <div className="flex items-center gap-2 mb-8 text-[#123458]">
+            <button onClick={() => setCurrentFolderId('root')} className="font-black text-xs uppercase tracking-widest hover:underline">Root</button>
+            {currentFolderId !== 'root' && (
+              <>
+                <ChevronLeft size={14} />
+                <span className="font-bold text-xs opacity-50">Inside Folder</span>
+              </>
+            )}
           </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-            {displayedItems.map((file) => (
-              <div key={file._id} className="group flex flex-col items-center gap-2">
-                <div 
-                  onClick={() => file.isFolder && setCurrentFolderId(file._id)}
-                  className={`w-full aspect-square rounded-[2rem] border-2 flex items-center justify-center transition-all relative overflow-hidden cursor-pointer ${file.isFolder ? 'bg-[#123458]/5 border-[#123458]' : 'bg-white border-[#D4C9BE]'}`}
-                >
-                  {file.isFolder ? <Folder size={48} fill="#123458" /> : file.fileType?.includes('image') ? <img src={file.fileUrl} className="w-full h-full object-cover" /> : <File size={40} />}
-                  
-                  {/* ACTION OVERLAY */}
-                  <div className="absolute inset-0 bg-[#123458]/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                    {!file.isFolder ? (
-                      <>
-                        <button onClick={(e) => {e.stopPropagation(); window.open(file.fileUrl, '_blank')}} className="p-2.5 bg-white rounded-xl text-[#123458] hover:scale-110 transition-transform">
-                          <ExternalLink size={18}/>
-                        </button>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation(); 
-                            handleMoveInit(file._id, file.fileName);
-                          }} 
-                          className="p-2.5 bg-white rounded-xl text-[#123458] hover:scale-110 transition-transform"
-                        >
-                          <Move size={18}/>
-                        </button>
-                        <button onClick={(e) => {e.stopPropagation(); handleDelete(file._id)}} className="p-2.5 bg-red-500 rounded-xl text-white hover:scale-110 transition-transform shadow-lg">
-                          <Trash2 size={18}/>
-                        </button>
-                      </>
-                    ) : (
-                      <button onClick={(e) => {e.stopPropagation(); handleDelete(file._id)}} className="p-2.5 bg-red-500 rounded-xl text-white hover:scale-110 transition-transform shadow-lg">
-                        <Trash2 size={18}/>
-                      </button>
-                    )}
+
+          {loading ? (
+            <div className="flex-1 flex items-center justify-center"><RefreshCw className="animate-spin text-[#123458]" size={48} /></div>
+          ) : displayedItems.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
+              <CloudUpload size={64} className="text-[#D4C9BE]" />
+              <h2 className="text-xl font-bold text-[#123458]">This directory is empty.</h2>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+              {displayedItems.map((file) => (
+                <div key={file._id} className="group flex flex-col items-center gap-2">
+                  <div 
+                    onClick={() => file.isFolder && setCurrentFolderId(file._id)}
+                    className={`w-full aspect-square rounded-[2rem] border-2 flex items-center justify-center transition-all relative overflow-hidden cursor-pointer ${file.isFolder ? 'bg-[#123458]/5 border-[#123458]' : 'bg-white border-[#D4C9BE]'}`}
+                  >
+                    {file.isFolder ? <Folder size={48} fill="#123458" /> : file.fileType?.includes('image') ? <img src={file.fileUrl} alt={file.fileName} className="w-full h-full object-cover" /> : <File size={40} />}
+                    
+                    {/* Action Overlay */}
+                    <div className="absolute inset-0 bg-[#123458]/90 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-all duration-300 backdrop-blur-sm">
+                      {!file.isFolder ? (
+                        <>
+                          <button onClick={(e) => {e.stopPropagation(); window.open(file.fileUrl, '_blank')}} className="p-2 bg-white rounded-xl text-[#123458] hover:scale-110"><ExternalLink size={16}/></button>
+                          <button onClick={(e) => {e.stopPropagation(); handleMoveInit(file._id, file.fileName)}} className="p-2 bg-white rounded-xl text-[#123458] hover:scale-110"><Move size={16}/></button>
+                          <button onClick={(e) => {e.stopPropagation(); handleDelete(file._id)}} className="p-2 bg-rose-500 text-white rounded-xl hover:scale-110 shadow-lg"><Trash2 size={16}/></button>
+                        </>
+                      ) : (
+                        <button onClick={(e) => {e.stopPropagation(); handleDelete(file._id)}} className="p-2 bg-rose-500 text-white rounded-xl hover:scale-110 shadow-lg"><Trash2 size={16}/></button>
+                      )}
+                    </div>
                   </div>
+                  <p className="text-xs font-bold truncate w-full text-center text-[#123458]">{file.fileName}</p>
                 </div>
-                <p className="text-xs font-bold truncate w-full text-center">{file.fileName}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
     );
   };
 
   // --- MAIN RENDER ---
   return (
-    <div className="h-screen w-full flex bg-[#F1EFEC] overflow-hidden relative">
+    <div className="h-screen w-full flex bg-[#F1EFEC] overflow-hidden relative font-inter">
       <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} onLogout={onLogout} />
       
       <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'pl-20' : 'pl-64'}`}>
         <Topbar user={user} />
         
-        <div className="flex-1 flex overflow-hidden">
-          <aside className="w-64 bg-white border-r p-6 hidden md:flex flex-col gap-4">
-            <button onClick={() => setIsAddMenuOpen(!isAddMenuOpen)} className="w-full bg-[#123458] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">
-              <Plus size={20} /> Add Item
-            </button>
-            {isAddMenuOpen && (
-              <div className="bg-[#F1EFEC] rounded-xl p-2 border space-y-1">
-                <button onClick={handleCreateFolder} className="w-full text-left px-4 py-2 hover:bg-[#D4C9BE] rounded-lg flex items-center gap-2 text-sm font-bold">
-                  <FolderPlus size={16}/> New Folder
-                </button>
-                <button onClick={() => fileInputRef.current.click()} className="w-full text-left px-4 py-2 hover:bg-[#D4C9BE] rounded-lg flex items-center gap-2 text-sm font-bold">
-                  <CloudUpload size={16}/> Upload File
-                </button>
-                <input type="file" ref={fileInputRef} onChange={(e) => onUpload(e.target.files[0])} className="hidden" />
-              </div>
-            )}
-          </aside>
+        {/* --- ROUTER OUTLET: This enables the sidebar tabs! --- */}
+        <Routes>
+          {/* Default to documents when visiting /dashboard */}
+          <Route index element={<Navigate to="documents" replace />} />
           
-          <FileBrowser />
-        </div>
+          <Route path="documents" element={<DocumentsView />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="activity" element={<ActivityLog />} />
+          <Route path="settings" element={
+            <div className="flex-1 flex items-center justify-center text-[#123458] font-bold text-xl opacity-50">
+              Settings Configuration: Coming Soon
+            </div>
+          } />
+        </Routes>
       </div>
 
-      {/* --- CUSTOM STYLED UI COMPONENTS --- */}
+      {/* --- OVERLAYS --- */}
       {toast.show && (
         <Toast 
           message={toast.message} 

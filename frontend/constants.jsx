@@ -78,10 +78,3 @@ export const INITIAL_ACTIVITY = [
     user: 'System' 
   },
 ];
-
-export const USER_MOCK = {
-  name: 'Alex Morgan',
-  email: 'alex.m@vault.security',
-  role: 'Administrator',
-  avatar: 'https://picsum.photos/seed/alex/200/200',
-};

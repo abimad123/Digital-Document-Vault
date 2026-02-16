@@ -1,243 +1,293 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  User, 
-  ShieldCheck, 
-  Cloud, 
-  LogOut, 
-  Key, 
-  ShieldAlert, 
-  Camera, 
-  Mail, 
-  Smartphone, 
-  MapPin, 
-  Shield, 
-  Activity, 
-  CreditCard, 
-  Lock, 
-  ExternalLink,
-  Fingerprint,
-  RefreshCw,
-  Cpu,
-  History,
-  Trash2,
-  ChevronRight,
-  Zap,
-  Share2
+  User, Cloud, Key, ShieldAlert, Mail, Smartphone, MapPin, 
+  Shield, CreditCard, ExternalLink, RefreshCw, 
+  History, ChevronRight, LogOut, Loader, ShieldCheck, 
+  Camera, Calendar, Zap, CheckCircle, Lock, Save
 } from 'lucide-react';
 
-const ProfilePage = ({ user }) => {
+const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // --- PASSWORD STATE ---
+  const [passData, setPassData] = useState({ current: '', new: '', confirm: '' });
+  const [passStatus, setPassStatus] = useState({ msg: '', type: '' }); // type: 'success' | 'error'
+  const [isSaving, setIsSaving] = useState(false);
+
+  // User Data State
+  const [profile, setProfile] = useState({
+    user: { username: 'Loading...', email: '...', plan: '...', renewalDate: '...' },
+    stats: { fileCount: 0, storageUsed: '0.00', storageLimit: 1024, storagePercent: 0 }
+  });
 
   const sidebarItems = [
     { id: 'overview', label: 'Overview', icon: User },
-    { id: 'security', label: 'Security', icon: Key },
-    { id: 'sessions', label: 'Sessions', icon: History },
-    { id: 'billing', label: 'Billing', icon: CreditCard },
+    { id: 'ChangePassword', label: 'Security', icon: Key },
   ];
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 800);
+  // --- FETCH DATA ---
+  const fetchProfile = async () => {
+    const token = localStorage.getItem('vaultToken');
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) setProfile({ user: data.user, stats: data.stats });
+      }
+    } catch (err) { console.error(err); } 
+    finally { setLoading(false); setIsRefreshing(false); }
+  };
+
+  useEffect(() => { fetchProfile(); }, []);
+
+  const handleRefresh = () => { setIsRefreshing(true); fetchProfile(); };
+
+  // --- PASSWORD SUBMIT LOGIC ---
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPassStatus({ msg: '', type: '' });
+
+    if (passData.new !== passData.confirm) {
+      setPassStatus({ msg: "New passwords do not match.", type: 'error' });
+      return;
+    }
+    if (passData.new.length < 6) {
+      setPassStatus({ msg: "Password must be at least 6 characters.", type: 'error' });
+      return;
+    }
+
+    setIsSaving(true);
+    const token = localStorage.getItem('vaultToken');
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/change-password', {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ 
+          currentPassword: passData.current, 
+          newPassword: passData.new 
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setPassStatus({ msg: "Password updated successfully.", type: 'success' });
+        setPassData({ current: '', new: '', confirm: '' }); // Clear form
+      } else {
+        setPassStatus({ msg: data.msg || "Update failed.", type: 'error' });
+      }
+    } catch (err) {
+      setPassStatus({ msg: "Server connection failed.", type: 'error' });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'overview':
         return (
-          <div className="space-y-6 animate-content-smooth">
+          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             {/* Identity Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-[#D4C9BE]/10 border-2 border-[#D4C9BE] rounded-3xl p-6 shadow-inner group transition-all duration-300 relative overflow-hidden">
-                <div className="absolute top-0 right-0 -mr-4 -mt-4 w-20 h-20 bg-[#123458]/5 rounded-full blur-xl"></div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 bg-[#F1EFEC] border border-[#D4C9BE] rounded-xl flex items-center justify-center text-[#123458] shadow-sm">
-                    <Mail size={20} />
-                  </div>
-                  <span className="px-2 py-0.5 bg-[#123458]/10 text-[#123458] rounded-md text-[9px] font-black uppercase tracking-widest border border-[#123458]/20">Verified</span>
+              <div className="group bg-white border border-[#D4C9BE]/40 rounded-2xl p-6 hover:shadow-lg hover:border-[#123458]/20 transition-all">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-10 h-10 bg-[#F1EFEC] rounded-xl flex items-center justify-center text-[#123458]"><Mail size={20} /></div>
+                  <span className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-100 flex items-center gap-1"><CheckCircle size={10} /> Verified</span>
                 </div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-[#D4C9BE] mb-1">Primary Email</p>
-                <h4 className="text-lg font-black text-[#123458] truncate">{user?.email || 'user@vault.io'}</h4>
-                <button className="mt-4 text-xs font-black text-[#123458] flex items-center gap-1.5 hover:gap-2 transition-all">
-                  Update <ExternalLink size={12} />
-                </button>
+                <div><p className="text-[10px] font-black uppercase tracking-widest text-[#D4C9BE] mb-1">Primary Email</p><h4 className="text-lg font-bold text-[#123458] truncate">{profile.user.email}</h4></div>
               </div>
-
-              <div className="bg-[#D4C9BE]/10 border-2 border-[#D4C9BE] rounded-3xl p-6 shadow-inner group transition-all duration-300 relative overflow-hidden">
-                <div className="absolute bottom-0 right-0 -mr-4 -mb-4 w-20 h-20 bg-[#123458]/5 rounded-full blur-xl"></div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 bg-[#F1EFEC] border border-[#D4C9BE] rounded-xl flex items-center justify-center text-[#123458] shadow-sm">
-                    <Smartphone size={20} />
-                  </div>
-                  <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-md text-[9px] font-black uppercase tracking-widest border border-emerald-500/20">Secured</span>
+              <div className="group bg-white border border-[#D4C9BE]/40 rounded-2xl p-6 hover:shadow-lg hover:border-[#123458]/20 transition-all">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-10 h-10 bg-[#F1EFEC] rounded-xl flex items-center justify-center text-[#123458]"><Smartphone size={20} /></div>
+                  <span className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-100 flex items-center gap-1"><CheckCircle size={10} /> Active</span>
                 </div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-[#D4C9BE] mb-1">Biometric Node</p>
-                <h4 className="text-lg font-black text-[#123458]">+1 (•••) •••-5421</h4>
-                <button className="mt-4 text-xs font-black text-[#123458] flex items-center gap-1.5 hover:gap-2 transition-all">
-                  Checkup <ChevronRight size={12} />
-                </button>
+                <div><p className="text-[10px] font-black uppercase tracking-widest text-[#D4C9BE] mb-1">Security Level</p><h4 className="text-lg font-bold text-[#123458]">High (Biometric)</h4></div>
               </div>
             </div>
-
             {/* Storage Card */}
-            <div className="bg-[#123458] rounded-[2rem] p-8 text-[#F1EFEC] relative overflow-hidden group border border-[#D4C9BE]/20 shadow-xl">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-[#D4C9BE]/10 blur-[100px] rounded-full -mr-20 -mt-20"></div>
-              <div className="flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10">
-                <div className="space-y-4 flex-1">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F1EFEC]/10 border border-[#D4C9BE]/30 rounded-full text-[9px] font-black uppercase tracking-widest backdrop-blur-md">
-                    <Cloud size={12} className="text-[#D4C9BE]" />
-                    Storage Health
-                  </div>
-                  <h3 className="text-2xl font-black tracking-wide leading-tight font-serif">Your digital legacy is <span className="text-[#D4C9BE]">secure.</span></h3>
-                  <div className="flex items-center gap-8">
-                    <div>
-                      <p className="text-2xl font-black">0.0 MB</p>
-                      <p className="text-[9px] font-bold text-[#D4C9BE]/60 uppercase tracking-widest">Utilized</p>
-                    </div>
-                    <div className="w-[1px] h-8 bg-[#F1EFEC]/10"></div>
-                    <div>
-                      <p className="text-2xl font-black">3.0 GB</p>
-                      <p className="text-[9px] font-bold text-[#D4C9BE]/60 uppercase tracking-widest">Allocated</p>
-                    </div>
-                  </div>
+            <div className="bg-[#123458] rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#D4C9BE]/10 blur-[80px] rounded-full -mr-16 -mt-16"></div>
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-[#D4C9BE] text-xs font-bold uppercase tracking-widest"><Cloud size={16} /> Storage Node</div>
+                  <div><h3 className="text-3xl font-serif font-black mb-1">Vault Capacity</h3><p className="text-[#D4C9BE]/60 text-sm">Encrypted storage allocated to your account.</p></div>
+                  <div className="flex items-baseline gap-1"><span className="text-4xl font-black">{profile.stats.storageUsed}</span><span className="text-lg text-[#D4C9BE]/60">MB Used</span></div>
                 </div>
-                <div className="w-full lg:w-64 space-y-4 bg-[#F1EFEC]/5 p-5 rounded-2xl border border-[#D4C9BE]/20 backdrop-blur-sm">
-                  <div className="h-2 w-full bg-[#F1EFEC]/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#D4C9BE] rounded-full w-[2%]"></div>
-                  </div>
-                  <button className="w-full bg-[#F1EFEC] text-[#123458] py-3 rounded-xl font-black text-xs hover:bg-[#D4C9BE] transition-all shadow-lg active:scale-95">
-                    Expand Storage
-                  </button>
+                <div className="w-full md:w-72 bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-[#D4C9BE] mb-3"><span>{profile.stats.storagePercent}% Full</span><span>{profile.stats.storageLimit} MB Total</span></div>
+                  <div className="h-3 w-full bg-black/30 rounded-full overflow-hidden mb-4"><div className="h-full bg-gradient-to-r from-[#D4C9BE] to-white rounded-full transition-all duration-1000" style={{ width: `${profile.stats.storagePercent}%` }}></div></div>
+                  <button className="w-full py-3 bg-white text-[#123458] rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-[#D4C9BE] transition-colors">Manage Storage</button>
                 </div>
               </div>
             </div>
           </div>
         );
-      case 'security':
+
+      case 'ChangePassword': // Replaced static 'security' with functional Change Password
         return (
-          <div className="space-y-6 animate-content-smooth">
+          <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-black text-[#123458] tracking-tight font-serif">Security Protocols</h2>
-              <button 
-                onClick={handleRefresh}
-                className={`p-2 bg-[#D4C9BE]/20 rounded-lg text-[#123458] hover:bg-[#D4C9BE]/40 transition-all ${isRefreshing ? 'animate-spin' : ''}`}
-              >
-                <RefreshCw size={18} />
-              </button>
+              <h2 className="text-xl font-bold text-[#123458]">Security Settings</h2>
             </div>
-            <div className="grid grid-cols-1 gap-4">
-              {[
-                { title: "Encryption Phrase", desc: "Seed for AES-256 local keys.", status: "Configured", icon: Key, action: "Cycle", danger: false },
-                { title: "Biometric Key", desc: "FIDO2 hardware auth protocol.", status: "Active", icon: Fingerprint, action: "Sync", danger: false },
-                { title: "Total Lockdown", desc: "Instantly revoke all access.", status: "Ready", icon: ShieldAlert, action: "Engage", danger: true }
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between gap-4 bg-[#F1EFEC] border-2 border-[#D4C9BE] p-5 rounded-2xl hover:border-[#123458] transition-all group shadow-sm">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${item.danger ? 'bg-rose-500/10 text-rose-600' : 'bg-[#123458]/5 text-[#123458]'}`}>
-                      <item.icon size={22} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-black text-[#123458]">{item.title}</h4>
-                        <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full border ${item.danger ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'}`}>{item.status}</span>
-                      </div>
-                      <p className="text-[11px] text-[#D4C9BE] font-bold uppercase tracking-widest">{item.desc}</p>
-                    </div>
-                  </div>
-                  <button className={`px-4 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all ${item.danger ? 'bg-rose-600 text-white hover:bg-rose-700 shadow-lg' : 'bg-[#123458] text-[#F1EFEC] hover:bg-[#030303]'}`}>
-                    {item.action}
-                  </button>
+
+            {/* --- CHANGE PASSWORD FORM --- */}
+            <div className="bg-white border border-[#D4C9BE]/40 rounded-3xl p-8 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-[#123458]/10 text-[#123458] rounded-lg"><Lock size={20} /></div>
+                <div>
+                  <h3 className="text-lg font-black text-[#123458]">Change Password</h3>
+                  <p className="text-xs font-bold text-[#D4C9BE] uppercase tracking-wide">Update your access credentials</p>
                 </div>
-              ))}
+              </div>
+
+              <form onSubmit={handlePasswordChange} className="space-y-5 max-w-lg">
+                <div>
+                  <label className="block text-[10px] font-black text-[#123458] uppercase tracking-widest mb-2">Current Password</label>
+                  <input 
+                    type="password" 
+                    value={passData.current}
+                    onChange={(e) => setPassData({...passData, current: e.target.value})}
+                    className="w-full bg-[#F1EFEC] border-2 border-transparent focus:bg-white focus:border-[#123458] rounded-xl px-4 py-3 text-sm font-bold text-[#123458] outline-none transition-all"
+                    placeholder="Enter current password"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-[#123458] uppercase tracking-widest mb-2">New Password</label>
+                    <input 
+                      type="password" 
+                      value={passData.new}
+                      onChange={(e) => setPassData({...passData, new: e.target.value})}
+                      className="w-full bg-[#F1EFEC] border-2 border-transparent focus:bg-white focus:border-[#123458] rounded-xl px-4 py-3 text-sm font-bold text-[#123458] outline-none transition-all"
+                      placeholder="Min. 6 chars"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-[#123458] uppercase tracking-widest mb-2">Confirm New</label>
+                    <input 
+                      type="password" 
+                      value={passData.confirm}
+                      onChange={(e) => setPassData({...passData, confirm: e.target.value})}
+                      className="w-full bg-[#F1EFEC] border-2 border-transparent focus:bg-white focus:border-[#123458] rounded-xl px-4 py-3 text-sm font-bold text-[#123458] outline-none transition-all"
+                      placeholder="Re-enter new"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {passStatus.msg && (
+                  <div className={`text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2 ${passStatus.type === 'error' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                    {passStatus.type === 'error' ? <ShieldAlert size={14}/> : <CheckCircle size={14}/>}
+                    {passStatus.msg}
+                  </div>
+                )}
+
+                <button 
+                  type="submit" 
+                  disabled={isSaving}
+                  className="flex items-center gap-2 bg-[#123458] text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? <Loader size={16} className="animate-spin" /> : <Save size={16} />}
+                  Update Password
+                </button>
+              </form>
             </div>
+
+           
           </div>
         );
       default:
-        return null;
+        return (
+          <div className="h-64 flex flex-col items-center justify-center text-[#D4C9BE] border-2 border-dashed border-[#D4C9BE]/30 rounded-3xl">
+            <CreditCard size={48} className="mb-4 opacity-50" />
+            <p className="font-bold uppercase tracking-widest text-sm">Billing Module Locked</p>
+          </div>
+        );
     }
   };
 
-  return (
-    /* Changed max-w-5xl to w-full to fill the screen */
-   <div className="w-full min-h-full bg-[#F1EFEC] animate-page-smooth font-inter">
-      {/* Container div now has horizontal padding p-8 instead of external centering margins */}
-      <div className="flex-1 p-8 md:p-12 space-y-10">
-        
-        {/* Profile Hero Section - Rotated to Deep Navy #123458 */}
-        <section className="relative h-48 md:h-64 bg-[#123458] rounded-[2rem] overflow-hidden shadow-2xl flex items-end p-6 md:p-10 group">
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#030303]/60 via-transparent to-transparent z-10"></div>
-          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-[#D4C9BE]/10 blur-[100px] rounded-full"></div>
-          
-          <div className="relative z-20 flex items-center gap-6 w-full translate-y-2">
-            <div className="relative group/avatar">
-              <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2rem] p-1 bg-gradient-to-tr from-[#D4C9BE] to-[#F1EFEC] relative shadow-2xl overflow-hidden transition-all duration-500 group-hover/avatar:scale-105">
-                <div className="w-full h-full rounded-[1.75rem] overflow-hidden bg-[#123458] border-2 border-[#123458]">
-                  <img src={user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop"} alt="Profile" className="w-full h-full object-cover transition-transform duration-1000 group-hover/avatar:scale-110" />
-                </div>
-                <button className="absolute inset-0 bg-[#030303]/60 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center text-[#F1EFEC] backdrop-blur-sm">
-                  <Camera size={24} strokeWidth={2} />
-                </button>
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-emerald-500 border-2 border-[#123458] rounded-xl flex items-center justify-center text-white shadow-xl">
-                <ShieldCheck size={16} strokeWidth={3} />
-              </div>
-            </div>
-            
-            <div className="flex-1 mb-2">
-              <div className="flex items-center gap-2 mb-2">
-                 <span className="px-3 py-1 bg-[#F1EFEC]/10 backdrop-blur-md border border-[#D4C9BE]/20 rounded-full text-[8px] font-black uppercase tracking-widest text-[#F1EFEC]">
-                   Verified
-                 </span>
-                 <span className="px-3 py-1 bg-[#D4C9BE]/20 backdrop-blur-md border border-[#D4C9BE]/20 rounded-full text-[8px] font-black uppercase tracking-widest text-[#D4C9BE]">
-                   3 Nodes
-                 </span>
-              </div>
-              <h1 className="text-3xl md:text-5xl font-black text-[#F1EFEC] tracking-tight font-serif leading-none">
-                 {user?.name || 'Authorized User'}
-              </h1>
-              <div className="flex items-center gap-4 text-[#D4C9BE] font-bold text-[10px] uppercase tracking-widest mt-2">
-                 <div className="flex items-center gap-1.5"><MapPin size={12} className="text-[#F1EFEC]" />US-PACIFIC-1</div>
-                 <div className="w-1 h-1 bg-[#D4C9BE]/30 rounded-full"></div>
-                 <div className="flex items-center gap-1.5"><Shield size={12} className="text-emerald-500" />Admin</div>
-              </div>
-            </div>
-          </div>
-        </section>
+  if (loading) return <div className="w-full h-full flex flex-col items-center justify-center bg-[#F1EFEC] text-[#123458] gap-4"><Loader className="animate-spin" size={32} /><p className="text-xs font-black uppercase tracking-widest">Loading Profile...</p></div>;
 
-        {/* Main Grid: Navigation + Content area expands to fill the wide container */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 md:gap-12">
-          {/* Navigation - Sidebar Navigation Area */}
-          <nav className="space-y-2">
-            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-[#D4C9BE] mb-6 ml-4">System Menu</p>
+  return (
+    <div className="w-full h-full bg-[#F1EFEC] font-inter overflow-y-auto custom-scrollbar">
+      <div className="max-w-7xl mx-auto p-6 md:p-10 space-y-8">
+
+        <header className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-[#D4C9BE]/30 flex flex-col md:flex-row items-center gap-8 md:gap-12 relative overflow-hidden">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-[#123458]/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+           
+          <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left z-10 w-full md:w-auto">
+  <div className="relative group">
+    <div className="w-24 h-24 rounded-full bg-[#123458] p-1 shadow-xl">
+      <div className="w-full h-full rounded-full overflow-hidden bg-[#0a1f35] flex items-center justify-center text-white text-3xl font-black relative">
+        {profile.user.username ? profile.user.name.charAt(0).toUpperCase() : <User />}
+        
+      </div>
+    </div>
+    <div className="absolute bottom-0 right-0 bg-emerald-500 text-white p-1.5 rounded-full border-4 border-white shadow-sm" title="Verified Identity">
+      <ShieldCheck size={14} strokeWidth={3} />
+    </div>
+  </div>
+
+ <div>
+       {/* FIX: Check for 'name' OR 'username' */}
+       <h1 className="text-3xl font-serif font-black text-[#123458] mb-1">
+         {profile.user.name || profile.user.username || 'Authorized User'}
+       </h1>
+    <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-xs font-bold text-[#D4C9BE] uppercase tracking-wider">
+      
+      {/* --- UPDATED HIGHLIGHTED LOCATION --- */}
+      <span className="flex items-center gap-1.5 bg-[#123458] text-white px-2.5 py-1 rounded-lg shadow-md hover:bg-[#030303] transition-colors cursor-default">
+        <MapPin size={12} className="text-emerald-400" /> 
+        INDIA
+      </span>
+      {/* ----------------------------------- */}
+
+      <span className="w-1.5 h-1.5 bg-[#D4C9BE] rounded-full hidden md:block"></span>
+      <span>Member since {new Date(profile.user.createdAt || Date.now()).getFullYear()}</span>
+    </div>
+  </div>
+</div>
+
+           <div className="hidden md:block w-px h-16 bg-[#D4C9BE]/30"></div>
+           <div className="flex-1 w-full flex flex-col sm:flex-row items-center sm:items-start justify-center md:justify-start gap-8 z-10">
+             <div className="flex items-start gap-4">
+                <div className="p-3 bg-[#123458]/5 text-[#123458] rounded-xl"><Zap size={24} fill="#123458" className="opacity-20" /><Zap size={24} className="absolute -mt-6" /></div>
+                <div><p className="text-[10px] font-black uppercase tracking-widest text-[#D4C9BE] mb-1">Current Plan</p><h3 className="text-xl font-black text-[#123458] flex items-center gap-2">{profile.user.plan}<span className="px-2 py-0.5 bg-[#123458] text-white text-[9px] rounded-md tracking-widest">ACTIVE</span></h3>
+                  </div>
+             </div>
+             <div className="flex items-start gap-4">
+                <div className="p-3 bg-[#D4C9BE]/10 text-[#D4C9BE] rounded-xl"><Calendar size={24} /></div>
+                <div><p className="text-[10px] font-black uppercase tracking-widest text-[#D4C9BE] mb-1">Join Date</p><h3 className="text-xl font-black text-[#123458]">{profile.user.renewalDate}</h3>
+               </div>
+             </div>
+           </div>
+        </header>
+
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <nav className="lg:col-span-3 sticky top-6 space-y-2">
+            <p className="px-4 text-[10px] font-black uppercase tracking-[0.3em] text-[#D4C9BE] mb-4">Settings</p>
             {sidebarItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`w-full group relative flex items-center gap-4 px-6 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all text-left overflow-hidden ${
-                  activeTab === item.id 
-                    ? 'bg-[#123458] text-[#F1EFEC] shadow-xl shadow-[#123458]/30 translate-x-1' 
-                    : 'text-[#D4C9BE] hover:bg-[#D4C9BE]/10 hover:text-[#123458]'
-                }`}
-              >
-                <item.icon size={18} className="transition-transform duration-300 group-hover:scale-110" />
+              <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 text-left ${activeTab === item.id ? 'bg-[#123458] text-white shadow-lg shadow-[#123458]/20 translate-x-2' : 'text-[#D4C9BE] hover:bg-white hover:text-[#123458] hover:shadow-sm'}`}>
+                <item.icon size={18} className={activeTab === item.id ? '' : 'opacity-70'} />
                 {item.label}
                 {activeTab === item.id && <ChevronRight size={14} className="ml-auto opacity-50" />}
               </button>
             ))}
-            
-            <div className="pt-10 px-6 space-y-6">
-               <div className="h-[1px] bg-[#D4C9BE]/30"></div>
-               <button className="flex items-center gap-3 font-black text-[9px] uppercase tracking-[0.4em] text-[#D4C9BE] hover:text-rose-500 transition-all active:scale-95">
-                  <LogOut size={16} />
-                  Sign Out
-               </button>
-            </div>
+            <div className="pt-6 px-4"><button onClick={() => window.location.href='/'} className="flex items-center gap-3 font-bold text-[12px] uppercase tracking-[0.2em] text-[#040147] hover:text-rose-500 transition-colors"><LogOut size={16} />Sign Out</button></div>
           </nav>
-
-          {/* Content Area - Now occupies 3/4 of the width */}
-          <div className="lg:col-span-3 min-w-0 pb-20">
-            {renderContent()}
-          </div>
+          <div className="lg:col-span-9 min-w-0 pb-10">{renderContent()}</div>
         </div>
       </div>
     </div>

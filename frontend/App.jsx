@@ -1,25 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/Layout';
-import Dashboard from './components/Dashboard';
-import DocumentList from './components/DocumentList';
 import Welcome from './components/Welcome';
 import FeaturesPage from './components/FeaturesPage';
 import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
 import ContactPage from './components/ContactPage';
-import ProfilePage from './components/ProfilePage';
-
-import { INITIAL_DOCUMENTS, INITIAL_ACTIVITY, USER_MOCK } from './constants';
-import { Settings, ShieldCheck } from 'lucide-react';
+import Dashboard from './components/Dashboard'; // Ensure this path is correct
 
 const App = () => {
+  // --- STATE MANAGEMENT ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [documents, setDocuments] = useState(INITIAL_DOCUMENTS);
-  const [activities, setActivities] = useState(INITIAL_ACTIVITY);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [vaultFiles, setVaultFiles] = useState([]);
+  const [user, setUser] = useState({ name: 'User', tier: 'Free' }); // Default user state
 
+  // Theme Toggle Effect
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -30,7 +24,13 @@ const App = () => {
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
-  // Private Route Wrapper to protect the dashboard
+  // Handle Login Success (Simulated for now, ideally comes from backend response)
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+    // You can fetch real user data here if needed, or rely on Dashboard to fetch "me"
+  };
+
+  // Private Route Wrapper
   const PrivateRoute = ({ children }) => {
     return isLoggedIn ? children : <Navigate to="/login" />;
   };
@@ -56,7 +56,7 @@ const App = () => {
 
         <Route path="/login" element={
           <LoginPage 
-            onLoginSuccess={() => setIsLoggedIn(true)} 
+            onLoginSuccess={handleLoginSuccess} 
             isDarkMode={isDarkMode} 
             toggleTheme={toggleTheme} 
           />
@@ -64,7 +64,7 @@ const App = () => {
 
         <Route path="/register" element={
           <RegisterPage 
-            onRegisterSuccess={() => setIsLoggedIn(true)} 
+            onRegisterSuccess={handleLoginSuccess} 
             isDarkMode={isDarkMode} 
             toggleTheme={toggleTheme} 
           />
@@ -83,13 +83,7 @@ const App = () => {
           element={
             <PrivateRoute>
               <Dashboard 
-                documents={documents} 
-                activities={activities} 
-                user={USER_MOCK}
-                isDarkMode={isDarkMode}
-                toggleTheme={toggleTheme}
-                vaultFiles={vaultFiles}
-                setVaultFiles={setVaultFiles}
+                user={user} 
                 onLogout={() => setIsLoggedIn(false)}
               />
             </PrivateRoute>

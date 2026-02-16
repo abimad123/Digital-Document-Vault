@@ -10,16 +10,23 @@ import Topbar from './Topbar';
 import Sidebar from './Sidebar';
 import Toast from './Toast'; 
 import MoveModal from './MoveModal';
-import Profile from './ProfilePage';       // New Import
-import ActivityLog from './ActivityLog'; // New Import
+import Profile from './ProfilePage';       
+import ActivityLog from './ActivityLog'; 
 
-const Dashboard = ({ user, onLogout }) => {
+const Dashboard = ({ onLogout }) => { // Removed 'user' prop since we fetch it here now
   // --- 1. DASHBOARD STATE ---
   const [vaultFiles, setVaultFiles] = useState([]);
   const [currentFolderId, setCurrentFolderId] = useState('root');
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [loading, setLoading] = useState(false);
+  
+  // --- NEW: USER STATE (Fixes Topbar Issue) ---
+  const [currentUser, setCurrentUser] = useState({ 
+    name: 'Loading...', 
+    tier: 'Free',
+    avatar: null 
+  });
 
   const fileInputRef = useRef(null);
   
@@ -32,16 +39,25 @@ const Dashboard = ({ user, onLogout }) => {
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
   };
 
-  // --- 2. DATA FETCHING ---
+  // --- 2. DATA FETCHING (FILES & USER) ---
   const fetchVaultContent = async () => {
     setLoading(true);
     const token = localStorage.getItem('vaultToken');
     try {
-      const response = await fetch('http://localhost:5000/api/files/all', {
+      // A. Fetch Files
+      const filesRes = await fetch('http://localhost:5000/api/files/all', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      const data = await response.json();
-      if (data.success) setVaultFiles(data.files);
+      const filesData = await filesRes.json();
+      if (filesData.success) setVaultFiles(filesData.files);
+
+      // B. Fetch Current User (The Fix)
+      const userRes = await fetch('http://localhost:5000/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const userData = await userRes.json();
+      if (userData.success) setCurrentUser(userData.user);
+
     } catch (err) {
       console.error("Vault Sync Error:", err);
     } finally {
@@ -155,7 +171,6 @@ const Dashboard = ({ user, onLogout }) => {
   };
 
   // --- 4. DOCUMENTS VIEW COMPONENT ---
-  // This bundles the "Add Sidebar" + "File Grid" so we can route to it
   const DocumentsView = () => {
     const displayedItems = vaultFiles.filter(f => f.parentId === currentFolderId);
 
@@ -242,13 +257,13 @@ const Dashboard = ({ user, onLogout }) => {
       <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} onLogout={onLogout} />
       
       <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'pl-20' : 'pl-64'}`}>
-        <Topbar user={user} />
         
-        {/* --- ROUTER OUTLET: This enables the sidebar tabs! --- */}
+        {/* --- PASSED REAL USER DATA TO TOPBAR --- */}
+        <Topbar user={currentUser} />
+        
+        {/* --- ROUTER OUTLET --- */}
         <Routes>
-          {/* Default to documents when visiting /dashboard */}
           <Route index element={<Navigate to="documents" replace />} />
-          
           <Route path="documents" element={<DocumentsView />} />
           <Route path="profile" element={<Profile />} />
           <Route path="activity" element={<ActivityLog />} />

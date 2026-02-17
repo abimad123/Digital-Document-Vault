@@ -3,6 +3,7 @@ import {
   Clock, Trash2, Cloud, Folder, LogIn, Move, 
   ShieldCheck, AlertTriangle, Calendar, Search, Filter, Activity
 } from 'lucide-react';
+import { API_BASE_URL } from '../config'; 
 
 const ActivityLog = () => {
   const [logs, setLogs] = useState([]);
@@ -17,7 +18,7 @@ const ActivityLog = () => {
     const fetchLogs = async () => {
       const token = localStorage.getItem('vaultToken');
       try {
-        const res = await fetch('http://localhost:5000/api/files/logs', {
+        const res = await fetch('${API_BASE_URL}/api/files/logs', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();

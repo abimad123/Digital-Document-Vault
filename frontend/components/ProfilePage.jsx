@@ -5,6 +5,7 @@ import {
   History, ChevronRight, LogOut, Loader, ShieldCheck, 
   Camera, Calendar, Zap, CheckCircle, Lock, Save
 } from 'lucide-react';
+import { API_BASE_URL } from '../config'; 
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -31,7 +32,7 @@ const ProfilePage = () => {
   const fetchProfile = async () => {
     const token = localStorage.getItem('vaultToken');
     try {
-      const res = await fetch('http://localhost:5000/api/auth/me', {
+      const res = await fetch('${API_BASE_URL}/api/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -64,7 +65,7 @@ const ProfilePage = () => {
     const token = localStorage.getItem('vaultToken');
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/change-password', {
+      const res = await fetch('${API_BASE_URL}/api/auth/change-password', {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,

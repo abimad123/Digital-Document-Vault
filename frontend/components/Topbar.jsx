@@ -4,6 +4,7 @@ import {
   Search, Bell, User, Settings, LogOut, ChevronDown, 
   ShieldCheck, Zap, File, Folder, X, Clock, Loader
 } from 'lucide-react';
+import { API_BASE_URL } from '../config'; 
 
 const Topbar = ({ user }) => {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ const Topbar = ({ user }) => {
         setIsSearching(true);
         const token = localStorage.getItem('vaultToken');
         try {
-          const res = await fetch(`http://localhost:5000/api/files/search?query=${searchQuery}`, {
+          const res = await fetch(`${API_BASE_URL}/api/files/search?query=${searchQuery}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const data = await res.json();
@@ -52,7 +53,7 @@ const Topbar = ({ user }) => {
   const fetchNotifications = async () => {
     const token = localStorage.getItem('vaultToken');
     try {
-      const res = await fetch('http://localhost:5000/api/files/logs', {
+      const res = await fetch('${API_BASE_URL}/api/files/logs', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();

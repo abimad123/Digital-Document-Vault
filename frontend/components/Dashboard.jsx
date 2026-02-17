@@ -40,14 +40,14 @@ const Dashboard = ({ onLogout }) => {
     setLoading(true);
     const token = localStorage.getItem('vaultToken');
     try {
-      const filesRes = await fetch('${API_BASE_URL}/api/files/all', {
+      const filesRes = await fetch(`${API_BASE_URL}/api/files/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const filesData = await filesRes.json();
       if (filesData.success) setVaultFiles(filesData.files);
 
       // B. Fetch Current User (The Fix)
-      const userRes = await fetch('${API_BASE_URL}/api/auth/me', {
+      const userRes = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const userData = await userRes.json();
@@ -88,7 +88,7 @@ const Dashboard = ({ onLogout }) => {
 
     const token = localStorage.getItem('vaultToken');
     try {
-      const response = await fetch('${API_BASE_URL}/api/files/create-folder', {
+      const response = await fetch(`${API_BASE_URL}/api/files/create-folder`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -112,7 +112,7 @@ const Dashboard = ({ onLogout }) => {
 
     const token = localStorage.getItem('vaultToken');
     try {
-      const response = await fetch('${API_BASE_URL}/api/files/upload', {
+      const response = await fetch(`${API_BASE_URL}/api/files/upload`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData

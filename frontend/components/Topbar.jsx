@@ -53,7 +53,7 @@ const Topbar = ({ user }) => {
   const fetchNotifications = async () => {
     const token = localStorage.getItem('vaultToken');
     try {
-      const res = await fetch('${API_BASE_URL}/api/files/logs', {
+      const res = await fetch( `${API_BASE_URL}/api/files/logs`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();

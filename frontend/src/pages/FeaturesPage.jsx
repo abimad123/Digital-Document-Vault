@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Added for Routing
+import { useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, 
   ChevronDown, 
@@ -16,10 +16,7 @@ import {
   HelpCircle,
   ArrowRight,
   Menu, 
-  X, 
-  Sun, 
-  Moon,
-  Lock,
+  X, Lock,
   MessageSquare,
   CreditCard,
   Sparkles,

@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; // Added for Routing
 import { 
   ShieldCheck, Lock, Zap, Globe, CheckCircle2, ArrowRight, Fingerprint, Sparkles, Building2, Activity, Quote,
-  Sun, Moon, User, Menu, X, ChevronDown, Cloud, Share2, ShieldAlert, FileText, Shield, Search, CheckCircle, HelpCircle, MessageSquare, CreditCard, Rocket, ChevronLeft, ChevronRight, Terminal, Server
-} from 'lucide-react';
+  Sun, Moon, User, Menu, X, ChevronDown, Cloud, Share2, ShieldAlert, FileText, Shield, Search, CheckCircle, HelpCircle, MessageSquare, CreditCard, Rocket } from 'lucide-react';
 import Footer from '../components/Footer';
 
 const Welcome = ({ onLogin, isDarkMode, toggleTheme }) => {
-  const navigate = useNavigate(); // Initialize navigator
+  const navigate = useNavigate();
   const [isYearly, setIsYearly] = useState(true);
   const [hoveredTier, setHoveredTier] = useState(1);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -75,12 +74,11 @@ const Welcome = ({ onLogin, isDarkMode, toggleTheme }) => {
               <img 
                 src="/logo.png" 
                 alt="VaultX Logo" 
-               className="h-16 w-auto object-contain scale-150 ml-2"// Adjust h-10 to match your preferred size
+               className="h-16 w-auto object-contain scale-150 ml-2"
               />
             </div>
 
             <div className="hidden lg:flex items-center gap-8 text-sm font-bold">
-              {/* Home is now the Active Button (Full Navy) */}
               <button 
                 onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
                 className="text-[#123458] transition-colors"
@@ -88,7 +86,6 @@ const Welcome = ({ onLogin, isDarkMode, toggleTheme }) => {
                 Home
               </button>
 
-              {/* Features is Muted */}
               <button 
                 onClick={() => navigate('/features')} 
                 className="text-[#123458]/70 hover:text-[#123458] transition-colors"
@@ -96,21 +93,19 @@ const Welcome = ({ onLogin, isDarkMode, toggleTheme }) => {
                 Features
               </button>
 
-              {/* FAQ is Muted */}
               <button 
                 onClick={() => {
-                  navigate('/'); // Go to Welcome page
+                  navigate('/');
                   setTimeout(() => {
                     const element = document.getElementById('faq');
                     if (element) element.scrollIntoView({ behavior: 'smooth' });
-                  }, 100); // Small delay to ensure component is mounted
+                  }, 100);
                 }} 
                 className="text-[#123458]/70 hover:text-[#123458] transition-colors"
               >
                 FAQ
               </button>
 
-              {/* Contact is now Muted (70% opacity) */}
               <button 
                 onClick={() => { navigate('/contact'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
                 className="text-[#123458]/70 hover:text-[#123458] transition-colors"

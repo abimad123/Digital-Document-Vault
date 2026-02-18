@@ -1,19 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  /* Font Definitions */
   --font-inter: "Inter", sans-serif;
   --font-serif: "DM Serif Text", serif;
   
-/* Your New Specific Palette */
-  --color-brand-navy: #123458;    /* Primary Action / Accents */
-  --color-brand-sand: #D4C9BE;    /* Borders / Secondary background */
-  --color-brand-bone: #F1EFEC;    /* Main Background */
-  --color-brand-rich-black: #030303; /* Text / Depth */
-
+  --color-brand-navy: #123458;   
+  --color-brand-sand: #D4C9BE;    
+  --color-brand-bone: #F1EFEC;    
+  --color-brand-rich-black: #030303; 
   --breakpoint-vault: 1400px;
   
-  /* Custom Animations */
   --animate-gradient: gradient 8s linear infinite;
   --animate-shine: shine 3s linear infinite;
   --animate-float: float 6s ease-in-out infinite;
@@ -43,14 +39,12 @@
   }
 }
 
-/* --- Global Base Styles --- */
 @layer base {
 body {
   
     font-family: var(--font-inter);
   }
 
-  /* This tells Tailwind v4 how to handle the dark mode toggle */
   .dark body {
     @apply bg-slate-950 text-slate-100;
   }
@@ -66,13 +60,11 @@ body {
   }
 }
 
-/* --- Glow & Polish Refinements --- */
 .animate-pulse-slow {
-  opacity: 0.3; /* Makes the big circles subtle, not neon */
+  opacity: 0.3;
   filter: blur(120px);
 }
 
-/* --- Custom Scrollbar --- */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 

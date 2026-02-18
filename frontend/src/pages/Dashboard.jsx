@@ -5,11 +5,11 @@ import {
   Folder, RefreshCw, Trash2, Move, ExternalLink, ChevronLeft
 } from 'lucide-react';
 
-import Topbar from './Topbar';
-import Sidebar from './Sidebar';
-import Toast from './Toast'; 
-import MoveModal from './MoveModal';
-import Profile from './ProfilePage';       
+import Topbar from '../components/Topbar';
+import Sidebar from '../components/Sidebar';
+import Toast from '../components/Toast'; 
+import MoveModal from '../components/MoveModal';
+import Profile from '../pages/ProfilePage';       
 import ActivityLog from './ActivityLog';
 import { API_BASE_URL } from '../config'; 
 

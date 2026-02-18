@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Welcome from './components/Welcome';
-import FeaturesPage from './components/FeaturesPage';
-import LoginPage from './components/LoginPage';
-import RegisterPage from './components/RegisterPage';
-import ContactPage from './components/ContactPage';
-import Dashboard from './components/Dashboard'; 
+import Welcome from './pages/Welcome';
+import FeaturesPage from './pages/FeaturesPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ContactPage from './pages/ContactPage';
+import Dashboard from './pages/Dashboard'; 
 
 const App = () => {
   // --- STATE MANAGEMENT ---

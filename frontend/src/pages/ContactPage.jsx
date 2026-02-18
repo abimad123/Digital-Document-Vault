@@ -1,33 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Added for Routing
+import { useNavigate } from 'react-router-dom';
 import { 
-  ShieldCheck, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  MessageSquare, 
-  Send, 
-  Sun, 
-  Moon, 
-  Menu, 
-  X, 
-  ArrowRight,
-  Globe,
-  LifeBuoy,
-  Building2,
-  Clock,
-  Sparkles,
-  ChevronRight,
-  ChevronDown,
-  User,
-  CreditCard,
-  HelpCircle,
-  Rocket
-} from 'lucide-react';
-import Footer from './Footer';
+  ShieldCheck, Mail, Phone, MapPin, MessageSquare, Send, Menu, X, ArrowRight, Globe, LifeBuoy, Building2, Clock, Sparkles,
+  User, CreditCard, HelpCircle, Rocket } from 'lucide-react';
+import Footer from '../components/Footer';
 
 const ContactPage = ({ isDarkMode, toggleTheme }) => {
-  const navigate = useNavigate(); // Initialize navigator
+  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [formState, setFormState] = useState({ name: '', email: '', subject: '', message: '' });

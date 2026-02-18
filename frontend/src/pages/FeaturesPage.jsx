@@ -26,7 +26,7 @@ import {
   Rocket,
   User
 } from 'lucide-react';
-import Footer from './Footer';
+import Footer from '../components/Footer';
 
 const FeaturesPage = ({ onLogin, isDarkMode, toggleTheme }) => {
   const navigate = useNavigate(); // Initialize navigator

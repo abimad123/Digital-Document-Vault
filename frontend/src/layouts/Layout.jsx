@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import Sidebar from './Sidebar';
-import Topbar from './Topbar';
+import Sidebar from '../components/Sidebar';
+import Topbar from '../components/Topbar';
 
 const Layout = ({ children, activeView, setActiveView, user, isDarkMode, toggleTheme, vaultFiles }) => {
   // Set to true by default as requested

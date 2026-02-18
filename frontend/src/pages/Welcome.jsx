@@ -4,7 +4,7 @@ import {
   ShieldCheck, Lock, Zap, Globe, CheckCircle2, ArrowRight, Fingerprint, Sparkles, Building2, Activity, Quote,
   Sun, Moon, User, Menu, X, ChevronDown, Cloud, Share2, ShieldAlert, FileText, Shield, Search, CheckCircle, HelpCircle, MessageSquare, CreditCard, Rocket, ChevronLeft, ChevronRight, Terminal, Server
 } from 'lucide-react';
-import Footer from './Footer';
+import Footer from '../components/Footer';
 
 const Welcome = ({ onLogin, isDarkMode, toggleTheme }) => {
   const navigate = useNavigate(); // Initialize navigator

@@ -23,6 +23,7 @@ import {
   Rocket,
   User
 } from 'lucide-react';
+import Navbar from '../components/Navbar'; 
 import Footer from '../components/Footer';
 
 const FeaturesPage = ({ onLogin, isDarkMode, toggleTheme }) => {
@@ -64,155 +65,8 @@ const FeaturesPage = ({ onLogin, isDarkMode, toggleTheme }) => {
 
   return (
     <div className="min-h-screen bg-[#F1EFEC] text-[#030303] selection:bg-[#123458]/30 font-inter transition-colors duration-300">
-
-      {/* Navbar */}
-      <nav 
-        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-500 border-b ${
-          isScrolled 
-            ? 'bg-[#F1EFEC]/80 backdrop-blur-xl border-[#D4C9BE] shadow-sm py-3' 
-            : 'bg-transparent border-transparent py-2'
-        }`}
-      >
-        <div className="max-w-vault mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-12">
-            {/* --- 1. DESKTOP LOGO UPDATE --- */}
-            <div 
-              onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className="flex items-center gap-2 cursor-pointer"
-            >
-              <img 
-                src="/logo.png" 
-                alt="VaultX Logo" 
-               className="h-16 w-auto object-contain scale-150 ml-2"// Adjust h-10 to match your preferred size
-              />
-            </div>
-
-         <div className="hidden lg:flex items-center gap-8 text-sm font-bold">
-  {/* Home is now the Active Button (Full Navy) */}
-  <button 
-    onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
-    className="text-[#123458]/70  hover:text-[#123458]   transition-colors"
-  >
-    Home
-  </button>
-
-  {/* Features is Muted */}
-  <button 
-    onClick={() => navigate('/features')} 
-    className="text-[#123458] transition-colors"
-  >
-    Features
-  </button>
-
-  {/* FAQ is Muted */}
-<button 
-    onClick={() => {
-      navigate('/'); // Go to Welcome page
-      setTimeout(() => {
-        const element = document.getElementById('faq');
-        if (element) element.scrollIntoView({ behavior: 'smooth' });
-      }, 100); // Small delay to ensure component is mounted
-    }} 
-    className="text-[#123458]/70 hover:text-[#123458] transition-colors"
-  >
-    FAQ
-  </button>
-
-  {/* Contact is now Muted (70% opacity) */}
-  <button 
-    onClick={() => { navigate('/contact'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
-    className="text-[#123458]/70 hover:text-[#123458] transition-colors"
-  >
-    Contact
-  </button>
-</div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-3">
-              <button onClick={() => navigate('/login')} className="px-5 py-2.5 text-sm font-bold text-[#123458] hover:opacity-70 transition-colors">Login</button>
-              <button onClick={() => navigate('/register')} className="bg-[#123458] text-[#F1EFEC] px-7 py-2.5 rounded-xl text-sm font-black transition-all shadow-lg shadow-[#123458]/20 active:scale-95">Register</button>
-            </div>
-
-            <button 
-              className="lg:hidden p-2 text-[#123458] focus:outline-none" 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu Overlay */}
-        <div 
-          className={`fixed inset-0 z-[60] bg-[#F1EFEC] transition-all duration-500 lg:hidden ${
-            isMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'
-          }`}
-        >
-          <div className="flex items-center justify-between px-6 py-6 border-b border-[#D4C9BE] bg-[#F1EFEC]">
-            <div 
-               onClick={() => { setIsMenuOpen(false); navigate('/'); }}
-               className="flex items-center gap-2 font-black text-[#123458] text-2xl tracking-wideer"
-            >
-              <ShieldCheck size={32} strokeWidth={2.5} />
-              <span className="font-serif">VaultX</span>
-            </div>
-            <button 
-              onClick={() => setIsMenuOpen(false)}
-              className="p-2 text-[#123458] bg-[#D4C9BE]/20 rounded-xl transition-colors"
-            >
-              <X size={28} />
-            </button>
-          </div>
-
-          <div className="flex flex-col h-[calc(100vh-80px)] overflow-y-auto px-6 py-10 space-y-8">
-            <div className="flex flex-col space-y-2">
-              {[
-                { label: 'Home', icon: CreditCard, path: '/' },
-                { label: 'Features', icon: Sparkles, path: '/features' },
-                { label: 'FAQ', icon: HelpCircle, path: '/' },
-                { label: 'Contact', icon: MessageSquare, path: '/contact' }
-              ].map((item, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    navigate(item.path);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="group flex items-center justify-between w-full p-4 rounded-2xl bg-[#D4C9BE]/10 hover:bg-[#D4C9BE]/30 transition-all border border-transparent hover:border-[#D4C9BE]"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#F1EFEC] flex items-center justify-center text-[#123458] shadow-sm">
-                      <item.icon size={22} />
-                    </div>
-                    <span className="text-xl font-bold text-[#030303] group-hover:text-[#123458] transition-colors">{item.label}</span>
-                  </div>
-                  <ArrowRight size={20} className="text-[#D4C9BE] group-hover:text-[#123458] group-hover:translate-x-1 transition-all" />
-                </button>
-              ))}
-            </div>
-
-            <div className="h-[1px] bg-[#D4C9BE]" />
-
-            <div className="flex flex-col space-y-4">
-              <button 
-                onClick={() => { setIsMenuOpen(false); navigate('/login'); }}
-                className="flex items-center justify-center gap-3 w-full py-5 rounded-2xl font-bold text-xl text-[#123458] bg-[#D4C9BE]/20 hover:bg-[#D4C9BE]/40 transition-all"
-              >
-                <User size={20} /> Login
-              </button>
-              <button 
-                onClick={() => { setIsMenuOpen(false); navigate('/register'); }}
-                className="flex items-center justify-center gap-3 w-full py-5 rounded-2xl font-black text-xl text-[#F1EFEC] bg-[#123458] hover:opacity-90 transition-all shadow-xl shadow-[#123458]/30"
-              >
-                <Rocket size={20} /> Get Started Free
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+      <Navbar />
+     
       {/* Main Content */}
       <main className="pt-32">
         <section className="py-20 px-6 bg-[#F1EFEC]">

@@ -61,12 +61,9 @@ const Welcome = () => {
 
         <div className="max-w-vault mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center relative z-10">
           <div className="space-y-8 text-center lg:text-left">
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-[#123458]/5 border border-[#D4C9BE] text-[10px] font-black text-[#123458] uppercase tracking-widest">
-              <div className="w-2 h-2 rounded-full bg-[#123458] animate-pulse" />
-              Vault Status: Secure
-            </div>
+       
 
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-[#123458] tracking-tighter leading-[0.95] font-serif">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-[#123458] tracking-wide leading-[0.95] font-serif">
               Your Digital <br />
               <span className="text-[#030303]">Legacy, Under <br /> Absolute Lock.</span>
             </h1>

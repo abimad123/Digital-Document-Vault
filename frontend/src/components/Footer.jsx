@@ -96,10 +96,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row items-center justify-between pt-10 border-t border-[#D4C9BE]/10 gap-4 text-xs font-medium text-[#D4C9BE]/60">
           <div className="flex items-center gap-6">
             <span>© 2026 Vault Security Technologies Inc.</span>
-            <div className="flex items-center gap-2 px-2 py-0.5 bg-[#F1EFEC]/5 text-[#F1EFEC] rounded-full border border-[#F1EFEC]/10">
-              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
-              All Systems Operational
-            </div>
+          
           </div>
           <div className="flex items-center gap-8">
             <a href="#" className="hover:text-[#F1EFEC]">Site Map</a>

@@ -86,20 +86,7 @@ const LoginPage = ({ onLoginSuccess }) => {
             </p>
           </div>
 
-          <div className="space-y-4 pt-4">
-              {[
-                "FIPS 140-2 Level 3 Hardware Security",
-                "AES-256-GCM End-to-End Encryption",
-                "Multi-Region Sovereign Redundancy"
-              ].map((feature, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm font-bold text-[#D4C9BE]">
-                  <div className="w-5 h-5 rounded-full bg-[#F1EFEC]/10 flex items-center justify-center text-[#F1EFEC]">
-                    <CheckCircle2 size={14} />
-                  </div>
-                  {feature}
-                </div>
-              ))}
-          </div>
+        
         </div>
         <div className="z-10 flex items-center justify-between text-[10px] font-black uppercase tracking-[0.3em] text-[#D4C9BE]/50"></div>
       </div>
@@ -199,15 +186,7 @@ const LoginPage = ({ onLoginSuccess }) => {
         </div>
       </div>
 
-      <div className="fixed bottom-8 right-8 hidden lg:flex items-center gap-3 p-4 bg-[#F1EFEC]/80 backdrop-blur-xl border border-[#D4C9BE] rounded-[1.5rem] shadow-2xl z-50">
-        <div className="w-10 h-10 rounded-xl bg-[#123458]/5 flex items-center justify-center text-[#123458]">
-          <LockKeyhole size={20} />
-        </div>
-        <div className="text-left">
-          <p className="text-[9px] font-black text-[#123458] uppercase tracking-widest">Client-Side Verification</p>
-          <p className="text-[8px] text-[#D4C9BE] mt-1 uppercase tracking-[0.2em]">End-to-End Encryption Active</p>
-        </div>
-      </div>
+     
     </div>
   );
 };

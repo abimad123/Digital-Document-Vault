@@ -71,10 +71,7 @@ const ContactPage = ({ isDarkMode, toggleTheme }) => {
       <section className="relative pt-44 pb-20 px-6 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-[#123458]/5 blur-[150px] rounded-full -z-10"></div>
         <div className="max-w-vault mx-auto text-center space-y-8 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4C9BE]/30 border border-[#D4C9BE] text-[10px] font-black text-[#123458] uppercase tracking-[0.3em]">
-            <MessageSquare size={14} className="animate-pulse" />
-            Direct Communication
-          </div>
+      
           <h1 className="text-5xl md:text-7xl font-black tracking-wideest leading-none font-serif text-[#123458]">
             Get in touch with the <br />
             <span className="text-[#030303]">

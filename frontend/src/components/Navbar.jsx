@@ -8,7 +8,9 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Handle Scroll Effect for Sticky Navbar
+  // CHECK IF LOGGED IN
+  const isAuthenticated = !!localStorage.getItem('vaultToken');
+
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
@@ -54,19 +56,28 @@ const Navbar = () => {
             {/* DESKTOP MENU */}
             <div className="hidden lg:flex items-center gap-8 text-sm font-bold">
               <button onClick={() => scrollToSection('top')} className="text-[#123458] hover:opacity-70 transition-opacity">Home</button>
-              
-              {/* FIXED: Navigate to separate Features Page */}
               <button onClick={() => navigate('/features')} className="text-[#123458]/70 hover:text-[#123458] transition-colors">Features</button>
-              
               <button onClick={() => scrollToSection('faq')} className="text-[#123458]/70 hover:text-[#123458] transition-colors">FAQ</button>
               <button onClick={() => navigate('/contact')} className="text-[#123458]/70 hover:text-[#123458] transition-colors">Contact</button>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
+            {/* DESKTOP BUTTONS */}
             <div className="hidden md:flex items-center gap-3">
-              <button onClick={() => navigate('/login')} className="px-5 py-2.5 text-sm font-bold text-[#123458] hover:opacity-70 transition-opacity">Login</button>
-              <button onClick={() => navigate('/register')} className="bg-[#123458] text-[#F1EFEC] px-6 py-2.5 rounded-xl text-sm font-black shadow-lg shadow-[#123458]/20 hover:-translate-y-0.5 transition-transform">Register</button>
+              {isAuthenticated ? (
+                <button 
+                  onClick={() => navigate('/dashboard')} 
+                  className="bg-[#123458] text-[#F1EFEC] px-6 py-2.5 rounded-xl text-sm font-black shadow-lg shadow-[#123458]/20 hover:-translate-y-0.5 transition-transform"
+                >
+                  Go to Dashboard
+                </button>
+              ) : (
+                <>
+                  <button onClick={() => navigate('/login')} className="px-5 py-2.5 text-sm font-bold text-[#123458] hover:opacity-70 transition-opacity">Login</button>
+                  <button onClick={() => navigate('/register')} className="bg-[#123458] text-[#F1EFEC] px-6 py-2.5 rounded-xl text-sm font-black shadow-lg shadow-[#123458]/20 hover:-translate-y-0.5 transition-transform">Register</button>
+                </>
+              )}
             </div>
             
             {/* MOBILE TOGGLE BUTTON */}
@@ -78,7 +89,6 @@ const Navbar = () => {
       </nav>
 
       {/* --- MOBILE MENU OVERLAY --- */}
-      {/* Fixed z-index and height to cover everything properly */}
       <div className={`fixed inset-0 z-[60] bg-[#F1EFEC] h-screen w-full transition-transform duration-300 lg:hidden ${isMenuOpen ? 'translate-y-0' : '-translate-y-full'}`}>
         
         {/* Mobile Header */}
@@ -95,7 +105,7 @@ const Navbar = () => {
         <div className="flex flex-col h-full overflow-y-auto px-6 py-8 space-y-2 pb-32">
             {[
               { l: 'Home', i: CreditCard, a: () => scrollToSection('top') },
-              { l: 'Features', i: Sparkles, a: () => { setIsMenuOpen(false); navigate('/features'); } }, // FIXED HERE
+              { l: 'Features', i: Sparkles, a: () => { setIsMenuOpen(false); navigate('/features'); } },
               { l: 'FAQ', i: HelpCircle, a: () => scrollToSection('faq') },
               { l: 'Contact', i: MessageSquare, a: () => { setIsMenuOpen(false); navigate('/contact'); } }
             ].map((x,i) => (
@@ -109,13 +119,25 @@ const Navbar = () => {
 
             <div className="h-px bg-[#D4C9BE]/50 my-6" />
 
+            {/* MOBILE MENU BUTTONS */}
             <div className="space-y-4">
-              <button onClick={() => { setIsMenuOpen(false); navigate('/login'); }} className="w-full py-4 rounded-xl bg-[#D4C9BE]/20 text-[#123458] font-bold flex justify-center gap-2 hover:bg-[#D4C9BE]/30 transition-colors">
-                <User size={20}/> Login
-              </button>
-              <button onClick={() => { setIsMenuOpen(false); navigate('/register'); }} className="w-full py-4 rounded-xl bg-[#123458] text-[#F1EFEC] font-bold flex justify-center gap-2 shadow-xl shadow-[#123458]/20 hover:opacity-90 transition-opacity">
-                <Rocket size={20}/> Get Started
-              </button>
+              {isAuthenticated ? (
+                <button 
+                  onClick={() => { setIsMenuOpen(false); navigate('/dashboard'); }} 
+                  className="w-full py-4 rounded-xl bg-[#123458] text-[#F1EFEC] font-bold flex justify-center gap-2 shadow-xl shadow-[#123458]/20 hover:opacity-90 transition-opacity"
+                >
+                  Go to Dashboard
+                </button>
+              ) : (
+                <>
+                  <button onClick={() => { setIsMenuOpen(false); navigate('/login'); }} className="w-full py-4 rounded-xl bg-[#D4C9BE]/20 text-[#123458] font-bold flex justify-center gap-2 hover:bg-[#D4C9BE]/30 transition-colors">
+                    <User size={20}/> Login
+                  </button>
+                  <button onClick={() => { setIsMenuOpen(false); navigate('/register'); }} className="w-full py-4 rounded-xl bg-[#123458] text-[#F1EFEC] font-bold flex justify-center gap-2 shadow-xl shadow-[#123458]/20 hover:opacity-90 transition-opacity">
+                    <Rocket size={20}/> Get Started
+                  </button>
+                </>
+              )}
             </div>
         </div>
       </div>

@@ -10,7 +10,8 @@ import Topbar from '../components/Topbar';
 import Sidebar from '../components/Sidebar';
 import Toast from '../components/Toast'; 
 import MoveModal from '../components/MoveModal';
-import Profile from '../pages/ProfilePage';        
+import Profile from '../pages/ProfilePage';   
+import StoragePage from '../pages/StoragePage';      
 import ActivityLog from './ActivityLog';
 import { API_BASE_URL } from '../config'; 
 
@@ -447,6 +448,7 @@ const Dashboard = ({ onLogout }) => {
           <Route path="documents" element={<DocumentsView />} />
           <Route path="profile" element={<Profile />} />
           <Route path="activity" element={<ActivityLog />} />
+          <Route path="storage" element={<StoragePage />} />
           <Route path="settings" element={
             <div className="flex-1 flex items-center justify-center text-[#123458] font-bold text-xl opacity-50">
               Settings Configuration: Coming Soon

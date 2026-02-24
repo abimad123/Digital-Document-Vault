@@ -56,7 +56,7 @@ const Footer = () => {
       <div className="max-w-vault mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-20">
           <div className="lg:col-span-2 space-y-8">
-            <div className="flex items-center gap-2 font-bold text-[#F1EFEC] text-2xl tracking-tight">
+            <div className="flex items-center gap-2 font-bold text-[#F1EFEC] text-2xl tracking-wide">
               <ShieldCheck size={32} strokeWidth={2.5} />
               <span className="font-serif">VaultX</span>
             </div>

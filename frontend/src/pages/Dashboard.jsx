@@ -52,17 +52,29 @@ const Dashboard = ({ onLogout }) => {
     setLoading(true);
     const token = localStorage.getItem('vaultToken');
     try {
+      // 1. Fetch User Data First
+      const userRes = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      // --- THE FIX: Check if token is expired/invalid ---
+      if (userRes.status === 401 || userRes.status === 403) {
+        triggerToast("Session expired. Please log in again.", "error");
+        setTimeout(() => {
+          onLogout(); // Triggers the logout function passed from App.jsx
+        }, 1500);
+        return; 
+      }
+
+      const userData = await userRes.json();
+      if (userData.success) setCurrentUser(userData.user);
+
+      // 2. Fetch Files
       const filesRes = await fetch(`${API_BASE_URL}/api/files/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const filesData = await filesRes.json();
       if (filesData.success) setVaultFiles(filesData.files);
-
-      const userRes = await fetch(`${API_BASE_URL}/api/auth/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const userData = await userRes.json();
-      if (userData.success) setCurrentUser(userData.user);
 
     } catch (err) {
       console.error("Vault Sync Error:", err);

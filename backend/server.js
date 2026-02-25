@@ -3,16 +3,18 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const Subscriber = require('./models/Subscriber');
+const contactRoutes = require('./routes/contactRoutes');
 dotenv.config();
 
 connectDB();
-
 const app = express();
 
 app.use(cors());
 app.use(express.json()); 
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/files', require('./routes/fileRoutes'));
+app.use('/api/contact', contactRoutes);
+
 app.post('/api/subscribe', async (req, res) => {
   try {
     const { email } = req.body;
@@ -20,14 +22,10 @@ app.post('/api/subscribe', async (req, res) => {
     if (!email) {
       return res.status(400).json({ success: false, message: 'Email is required' });
     }
-
-    // Check if email already exists
     const existingSubscriber = await Subscriber.findOne({ email });
     if (existingSubscriber) {
       return res.status(409).json({ success: false, message: 'This email is already subscribed.' });
     }
-
-    // Save to DB
     const newSubscriber = new Subscriber({ email });
     await newSubscriber.save();
 

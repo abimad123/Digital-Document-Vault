@@ -4,8 +4,6 @@ const { register, login, getMe, changePassword } = require('../controllers/authC
 
 // 1. Import your auth middleware (you called it 'auth')
 const auth = require('../middleware/authMiddleware');
-
-// 2. Import your User model so the database knows how to update the plan
 const User = require('../models/User'); 
 
 // --- IDENTITY PROTOCOLS ---
@@ -15,23 +13,20 @@ router.get('/me', auth, getMe);
 router.put('/change-password', auth, changePassword);
 router.get('/health', (req, res) => res.send("Vault Node Online"));
 
-// --- UPGRADE PLAN ROUTE ---
-// 3. Changed 'protect' to 'auth' to match your middleware import above
 router.put('/upgrade-plan', auth, async (req, res) => {
   try {
-    const { plan } = req.body;
+    const { plan } = req.body; // The frontend sends { plan: 'Professional' }
     
-    // Find the user in the database
     const user = await User.findById(req.user.id);
-    
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Update the plan
-    user.plan = plan;
+    // 🚨 THE FIX IS HERE 🚨
+    // We must use user.tier because that is what your User.js model uses!
+    user.tier = plan; 
 
-    // Increase Storage Limit based on plan (Example: 50GB for Pro, Unlimited for Enterprise)
+    // Increase Storage Limit based on plan
     if (plan === 'Professional') {
       user.storageLimit = 51200; // 50,000 MB
     } else if (plan === 'Enterprise') {

@@ -132,7 +132,7 @@ const LoginPage = ({ onLoginSuccess }) => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between ml-1">
-                <label className="text-[12px] font-black uppercase tracking-widest text-[#123458]">Cryptographic Key</label>
+                <label className="text-[12px] font-black uppercase tracking-widest text-[#123458]">Password</label>
                 <button type="button" className="text-[10px] font-black uppercase tracking-widest text-[#123458] hover:opacity-70">Forgot?</button>
               </div>
               <div className={`relative group transition-all duration-300 ${focusedField === 'password' ? 'scale-[1.01]' : ''}`}>

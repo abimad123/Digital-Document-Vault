@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ContactPage from './pages/ContactPage';
 import Dashboard from './pages/Dashboard'; 
+import ForgotPassword from './pages/ForgotPassword';
 
 const App = () => {
   // --- STATE MANAGEMENT ---
@@ -70,6 +71,8 @@ const App = () => {
             toggleTheme={toggleTheme} 
           />
         } />
+
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* --- Auth Routes (Redirects to Dashboard if already logged in) --- */}
         <Route path="/login" element={

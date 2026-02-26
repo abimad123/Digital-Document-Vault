@@ -133,8 +133,13 @@ const LoginPage = ({ onLoginSuccess }) => {
             <div className="space-y-2">
               <div className="flex items-center justify-between ml-1">
                 <label className="text-[12px] font-black uppercase tracking-widest text-[#123458]">Password</label>
-                <button type="button" className="text-[10px] font-black uppercase tracking-widest text-[#123458] hover:opacity-70">Forgot?</button>
-              </div>
+             <button 
+      type="button" 
+      onClick={() => navigate('/forgot-password')} 
+      className="text-[12px] font-black uppercase tracking-widest text-[#123458] hover:opacity-70 transition-opacity"
+    >
+      Forgot?
+    </button>  </div>
               <div className={`relative group transition-all duration-300 ${focusedField === 'password' ? 'scale-[1.01]' : ''}`}>
                 <div className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors ${focusedField === 'password' ? 'text-[#123458]' : 'text-[#D4C9BE]'}`}>
                   <Lock size={18} />

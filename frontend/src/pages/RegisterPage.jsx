@@ -174,7 +174,7 @@ const RegisterPage = ({ onRegisterSuccess }) => {
         <div className="w-full max-w-xl mx-auto space-y-8">
           <div className="space-y-2">
             <h2 className="text-5xl font-black text-[#123458] font-serif">{step === 'account' ? 'Create Account' : step === 'plan' ? 'Select Plan' : 'Secure Billing'}</h2>
-            <p className="text-[#123458]/60 font-medium">Please provide the necessary details below.</p>
+            <p className="text-[#000000] text-2xl font-bold">The payment is on demo mode for now </p>
           </div>
 
           <div className="min-h-[380px]">

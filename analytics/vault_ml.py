@@ -13,6 +13,7 @@ from pathlib import Path
 
 from joblib import dump
 from pymongo import ASCENDING, DESCENDING, MongoClient, UpdateOne
+from pymongo.errors import ConfigurationError
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import (
@@ -169,9 +170,36 @@ def connect(args):
     if not uri:
         raise ValueError("Set MONGO_URI or pass --mongo-uri for MongoDB commands.")
     client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-    client.admin.command("ping")
-    database = client[args.database] if args.database else client.get_default_database()
-    return client, database
+    try:
+        client.admin.command("ping")
+        if args.database:
+            database = client[args.database]
+        else:
+            try:
+                database = client.get_default_database()
+            except ConfigurationError as exc:
+                raise ValueError("MongoDB URI has no database name; pass --database NAME or add /NAME to the URI.") from exc
+        return client, database
+    except Exception:
+        client.close()
+        raise
+
+
+def check_dataset(database):
+    """Read-only connection and training eligibility check over vault metadata."""
+    projection = {"fileName": 1, "fileType": 1, "fileSize": 1, "sizeBytes": 1, "isFolder": 1}
+    documents = list(database.files.find({}, projection))
+    rows, sizes, skipped = prepare_rows(documents)
+    small = sum(size < THRESHOLD_MB for size in sizes)
+    large = len(sizes) - small
+    return {
+        "database": database.name,
+        "fileDocuments": len(documents),
+        "usableForML": len(rows),
+        "skipped": skipped,
+        "classCounts": {"small": small, "large": large},
+        "readyForTraining": len(rows) >= 40 and min(small, large) >= 5,
+    }
 
 
 def ensure_indexes(database):
@@ -205,7 +233,7 @@ def save_local(metrics, regressor, classifier, output_dir):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["init-db", "seed-demo", "summary", "train"])
+    parser.add_argument("command", choices=["check", "init-db", "seed-demo", "summary", "train"])
     parser.add_argument("--source", choices=["vault", "demo", "generated"], default="vault")
     parser.add_argument("--mongo-uri", help="MongoDB URI; prefer MONGO_URI environment variable")
     parser.add_argument("--database", help="Database name; defaults to the database in URI")
@@ -222,7 +250,9 @@ def main():
 
     client, database = connect(args)
     try:
-        if args.command == "init-db":
+        if args.command == "check":
+            print(json.dumps(check_dataset(database), indent=2))
+        elif args.command == "init-db":
             ensure_indexes(database)
             print("MongoDB indexes created.")
         elif args.command == "seed-demo":

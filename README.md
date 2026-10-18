@@ -15,7 +15,7 @@ The dashboard has Drive-style My Drive, Starred, Recent, and Trash views. It sup
 
 ## Run the application
 
-Use Node.js 20+ and a MongoDB database. Create `backend/.env` with `PORT`, `JWT_SECRET`, `MONGO_URI_LOCAL` or `MONGO_URI_ATLAS`, and the three `CLOUDINARY_*` variables used in `backend/config/cloudinaryConfig.js`. Create `frontend/.env` with `VITE_API_URL=http://localhost:5000`. Keep credentials out of Git.
+Use Node.js 20+ and a MongoDB database. Create `backend/.env` with `PORT`, `JWT_SECRET`, `MONGO_URI_LOCAL` or `MONGO_URI_ATLAS`, and the three `CLOUDINARY_*` variables used in `backend/config/cloudinaryConfig.js`. Include the database name in the MongoDB URI path (for example, `/vaultDB`) so the API and PyMongo use the same database. Create `frontend/.env` with `VITE_API_URL=http://localhost:5000`. Keep credentials out of Git. When both MongoDB URI variables are set, the API uses Atlas.
 
 ```powershell
 cd backend
@@ -45,6 +45,7 @@ python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 $env:MONGO_URI = 'mongodb://localhost:27017/vaultx'
 .venv\Scripts\python vault_ml.py init-db
+.venv\Scripts\python vault_ml.py check
 .venv\Scripts\python vault_ml.py seed-demo
 .venv\Scripts\python vault_ml.py summary --source demo
 .venv\Scripts\python vault_ml.py train --source demo
@@ -57,6 +58,8 @@ Use `train --source vault` to evaluate actual vault metadata after it contains a
 ```
 
 The demo generator creates synthetic records in `ml_demo_files`; it never changes the application's `files` collection. `init-db` creates compound indexes on `files` and `activities` plus analytics indexes. `summary` uses a MongoDB aggregation pipeline. Training results are written to `analytics/results/metrics.json`; Mongo-backed runs are also stored in `ml_model_runs`.
+
+`check` is read-only: it pings MongoDB and reports the selected database, usable file count, size-class counts, and whether real-data training is possible. On 18 October 2026, live checks connected to both Atlas (`test`: 15 file records, 10 usable, 9 small and 1 large) and local MongoDB (`vaultDB`: empty). The Atlas dataset does not yet meet the minimum of 40 usable records and five in each class.
 
 The [project report](reports/MONGODB_PROJECT_REPORT.md) explains the dataset, MongoDB/PyMongo code, preprocessing, models, and all required evaluation metrics. Its initial numbers use the generated demo dataset and are not evidence of performance on real uploads.
 

@@ -2,7 +2,7 @@ import unittest
 
 import mongomock
 
-from vault_ml import demo_documents, ensure_indexes, evaluate, mongo_summary, parse_size_mb, prepare_rows
+from vault_ml import check_dataset, demo_documents, ensure_indexes, evaluate, mongo_summary, parse_size_mb, prepare_rows
 
 
 class VaultMLTests(unittest.TestCase):
@@ -45,6 +45,20 @@ class VaultMLTests(unittest.TestCase):
         self.assertEqual(by_type["application/pdf"]["fileCount"], 2)
         self.assertEqual(by_type["application/pdf"]["totalBytes"], 3072)
         self.assertEqual(by_type["image/png"]["fileCount"], 1)
+
+    def test_read_only_dataset_check_reports_training_eligibility(self):
+        database = mongomock.MongoClient().vaultx
+        database.files.insert_many([
+            {"fileName": "small.pdf", "fileType": "application/pdf", "sizeBytes": 1048576},
+            {"fileName": "large.png", "fileType": "image/png", "sizeBytes": 6291456},
+            {"fileName": "folder", "isFolder": True},
+        ])
+        status = check_dataset(database)
+        self.assertEqual(status["fileDocuments"], 3)
+        self.assertEqual(status["usableForML"], 2)
+        self.assertEqual(status["classCounts"], {"small": 1, "large": 1})
+        self.assertFalse(status["readyForTraining"])
+        self.assertEqual(database.list_collection_names(), ["files"])
 
 
 if __name__ == "__main__":

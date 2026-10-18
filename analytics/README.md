@@ -9,6 +9,6 @@ Collections used:
 - `ml_demo_files`: synthetic demo records, upserted by `demoId` so reseeding is safe.
 - `ml_model_runs`: evaluation results, inserted after MongoDB-backed training.
 
-The models never need Cloudinary URLs or user secrets. Actual vault data must have enough examples in both size classes for a meaningful train/test split. Use `--database NAME` if your MongoDB URI does not include a database name.
+The models never need Cloudinary URLs or user secrets. Actual vault data must have enough examples in both size classes for a meaningful train/test split. Include the database name in `MONGO_URI`, or pass `--database NAME`. Run `python vault_ml.py check` for a read-only connection and data-readiness check before training.
 
-For tests, install `requirements-dev.txt` and run `python -m unittest discover -s analytics -v` from the repository root. The database-facing test uses `mongomock`; a live MongoDB connection is still needed to validate deployment.
+For tests, install `requirements-dev.txt` and run `python -m unittest discover -s analytics -v` from the repository root. The database-facing tests use `mongomock`. A live check on 18 October 2026 reached the configured Atlas `test` database and local `vaultDB`; the live vault has too few usable files for model evaluation.

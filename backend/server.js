@@ -6,7 +6,6 @@ const Subscriber = require('./models/Subscriber');
 const contactRoutes = require('./routes/contactRoutes');
 dotenv.config();
 
-connectDB();
 const app = express();
 
 app.use(cors());
@@ -37,4 +36,16 @@ app.post('/api/subscribe', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Vault Server operational on port ${PORT}`));
+async function start() {
+  await connectDB();
+  return app.listen(PORT, () => console.log(`Vault Server operational on port ${PORT}`));
+}
+
+if (require.main === module) {
+  start().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { app, start };

@@ -9,7 +9,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.units import inch
 from reportlab.platypus import (
-    HRFlowable, Paragraph, Preformatted, SimpleDocTemplate,
+    HRFlowable, KeepTogether, PageBreak, Paragraph, Preformatted, SimpleDocTemplate,
     Spacer, Table, TableStyle,
 )
 
@@ -91,8 +91,7 @@ def build():
             ("TOPPADDING", (0, 0), (-1, -1), 3),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
         ]))
-        story.append(table)
-        story.append(Spacer(1, 8))
+        story.append(KeepTogether([table, Spacer(1, 8)]))
         table_rows.clear()
 
     for raw in lines + [""]:
@@ -122,6 +121,8 @@ def build():
             story.append(HRFlowable(width="100%", thickness=2, color=BEIGE, spaceAfter=13))
         elif line.startswith("## "):
             flush_paragraph()
+            if line.startswith("## 7. Evaluation results"):
+                story.append(PageBreak())
             story.append(Paragraph(inline(line[3:]), styles["H2Custom"]))
         elif re.match(r"^\d+\. ", line):
             flush_paragraph()

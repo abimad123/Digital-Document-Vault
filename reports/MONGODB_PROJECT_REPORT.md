@@ -6,6 +6,8 @@
 
 **Evaluation status:** Reproducible synthetic demo; results from a live vault database must be run separately.
 
+**Live connection check (18 October 2026):** Mongoose and PyMongo both connected to the configured Atlas database (`test`) and local database (`vaultDB`). Atlas contained 15 file records; 10 were usable for ML (9 below 5 MB, 1 at least 5 MB). The local database had no file records. Real-data model evaluation was not run because the required sample and class counts were not met.
+
 ## 1. Introduction
 
 VaultX is a digital document management prototype. The application stores user accounts, document metadata, folders, and activity logs in MongoDB; binary files are uploaded through Cloudinary. The MongoDB course extension adds a Python analytics workflow using PyMongo to create indexes, seed isolated demo records, run aggregation queries, train two machine-learning models, and preserve evaluation results. This makes MongoDB both the operational data store and a source for reproducible analysis.
@@ -30,7 +32,7 @@ The application continues to use Mongoose for transactions such as upload and fo
 
 `init-db` creates a compound `files` index on `(user, parentId, createdAt)` for owner and folder views, an `activities` index on `(user, createdAt)` for recent logs, a unique `demoId` index for repeatable upserts, and a descending `createdAt` index for model-run history. `summary` executes a MongoDB aggregation pipeline: `$match` non-folder documents with numeric sizes, `$group` by MIME type to count files and sum/average bytes, and `$sort` by count. MongoDB-backed training writes metrics and source information to `ml_model_runs`. Existing app searches use a case-insensitive regular expression; that search pattern is not fully optimized by the added index.
 
-The database URI is supplied through `MONGO_URI` or `--mongo-uri`, and `--database` can select a database explicitly. The command does not print credentials. The analytics code does not request Cloudinary URLs, passwords, billing data, or file contents.
+The database URI is supplied through `MONGO_URI` or `--mongo-uri`, and `--database` can select a database explicitly. The URI should include its database name. The read-only `check` command pings MongoDB and reports the selected database, usable records, class counts, and training eligibility. Commands do not print credentials. The analytics code does not request Cloudinary URLs, passwords, billing data, or file contents.
 
 ## 5. Data preprocessing
 
@@ -66,6 +68,7 @@ From `analytics/`, install `requirements.txt`, set `MONGO_URI` to a MongoDB URI 
 
 ```powershell
 python vault_ml.py init-db
+python vault_ml.py check
 python vault_ml.py seed-demo
 python vault_ml.py summary --source demo
 python vault_ml.py train --source demo

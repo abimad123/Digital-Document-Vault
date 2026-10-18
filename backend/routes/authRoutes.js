@@ -4,12 +4,19 @@ const { register, login, getMe, changePassword } = require('../controllers/authC
 const auth = require('../middleware/authMiddleware');
 const User = require('../models/User'); 
 const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
 
 router.post('/register', register); 
 router.post('/login', login);
 router.get('/me', auth, getMe);
 router.put('/change-password', auth, changePassword);
-router.get('/health', (req, res) => res.send("Vault Node Online"));
+router.get('/health', (req, res) => {
+  const connected = mongoose.connection.readyState === 1;
+  res.status(connected ? 200 : 503).json({
+    status: connected ? 'ok' : 'unavailable',
+    database: connected ? mongoose.connection.name : null
+  });
+});
 
 router.post('/verify-email', async (req, res) => {
   try {

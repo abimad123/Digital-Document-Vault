@@ -92,6 +92,7 @@ router.post('/upload', auth, upload.single('file'), async (req, res) => {
       publicId: req.file.filename,
       fileType: req.file.mimetype,
       fileSize: (req.file.size / 1024 / 1024).toFixed(2) + ' MB',
+      sizeBytes: req.file.size,
       parentId: parentId || 'root',
       isFolder: false
     });

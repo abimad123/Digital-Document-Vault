@@ -7,6 +7,7 @@ const FileSchema = new mongoose.Schema({
   publicId: { type: String }, // Optional for folders
   fileType: { type: String },
   fileSize: { type: String },
+  sizeBytes: { type: Number, min: 0 }, // Exact size for MongoDB analytics; fileSize supports older records.
   isFolder: { type: Boolean, default: false }, // CRITICAL for your new UI logic
   parentId: { type: String, default: 'root' }, // Used for moving items into folders
   createdAt: { type: Date, default: Date.now }

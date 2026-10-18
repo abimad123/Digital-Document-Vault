@@ -67,6 +67,8 @@ router.put('/upgrade-plan', auth, async (req, res) => {
       user.storageLimit = 51200; 
     } else if (plan === 'Enterprise') {
       user.storageLimit = 'Unlimited';
+    } else if (plan === 'Personal') {
+      user.storageLimit = 1024;
     }
 
     await user.save();

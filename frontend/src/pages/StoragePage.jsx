@@ -38,8 +38,7 @@ const StoragePage = () => {
         setCurrentTier(userTier);
         
         // Set limit based on tier
-        if (userTier === 'Professional') limit = 51200;
-        if (userTier === 'Enterprise') limit = 'Unlimited';
+        limit = userData.stats?.storageLimit ?? limit;
         
         setStats(prev => ({ ...prev, storageLimit: limit }));
       }
@@ -54,10 +53,10 @@ const StoragePage = () => {
         let docs = 0, images = 0, other = 0;
         let totalUsed = 0;
         
-        filesData.files.forEach(file => {
-          // Cloudinary sizes are usually in bytes. Convert to MB.
-          // If size is missing from your DB, fallback to 0.5 MB so the bar still works.
-          const sizeMB = file.size ? (file.size / (1024 * 1024)) : 0.5; 
+        filesData.files.filter(file => !file.isFolder).forEach(file => {
+          const sizeMB = typeof file.sizeBytes === 'number'
+            ? file.sizeBytes / (1024 * 1024)
+            : parseFloat(file.fileSize) || 0;
           totalUsed += sizeMB;
           
           const type = (file.fileType || '').toLowerCase();

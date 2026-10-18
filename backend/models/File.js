@@ -10,7 +10,10 @@ const FileSchema = new mongoose.Schema({
   sizeBytes: { type: Number, min: 0 }, // Exact size for MongoDB analytics; fileSize supports older records.
   isFolder: { type: Boolean, default: false }, // CRITICAL for your new UI logic
   parentId: { type: String, default: 'root' }, // Used for moving items into folders
-  createdAt: { type: Date, default: Date.now }
+  isStarred: { type: Boolean, default: false },
+  trashedAt: { type: Date, default: null },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('File', FileSchema);

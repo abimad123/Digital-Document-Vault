@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { API_BASE_URL } from '../config'; 
 
-const Topbar = ({ user }) => {
+const Topbar = ({ user, onOpenSearchResult }) => {
   const navigate = useNavigate();
   
   // --- STATES ---
@@ -29,7 +29,7 @@ const Topbar = ({ user }) => {
         setIsSearching(true);
         const token = localStorage.getItem('vaultToken');
         try {
-          const res = await fetch(`${API_BASE_URL}/api/files/search?query=${searchQuery}`, {
+          const res = await fetch(`${API_BASE_URL}/api/files/search?query=${encodeURIComponent(searchQuery)}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const data = await res.json();
@@ -41,7 +41,7 @@ const Topbar = ({ user }) => {
           setIsSearchOpen(true);
         }
       } else {
-        searchResults([]);
+        setSearchResults([]);
         setIsSearchOpen(false);
       }
     }, 500);
@@ -59,7 +59,8 @@ const Topbar = ({ user }) => {
       const data = await res.json();
       if (data.success) {
         setNotifications(data.logs);
-        setUnreadCount(data.logs.length > 0 ? 3 : 0); 
+        const lastSeen = localStorage.getItem('vaultActivitySeenAt');
+        setUnreadCount(lastSeen ? data.logs.filter(log => new Date(log.createdAt) > new Date(lastSeen)).length : data.logs.length);
       }
     } catch (err) {
       console.error("Notif Error", err);
@@ -67,10 +68,19 @@ const Topbar = ({ user }) => {
   };
 
   const toggleNotifications = () => {
-    if (!isNotifOpen) fetchNotifications();
+    if (!isNotifOpen) {
+      localStorage.setItem('vaultActivitySeenAt', new Date().toISOString());
+      fetchNotifications();
+    }
     setIsNotifOpen(!isNotifOpen);
     setUnreadCount(0);
   };
+
+  useEffect(() => {
+    fetchNotifications();
+    const timer = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -107,7 +117,7 @@ const Topbar = ({ user }) => {
           <div className="absolute top-full left-0 right-0 mt-2 md:mt-3 bg-white rounded-xl md:rounded-2xl shadow-2xl border border-[#D4C9BE]/30 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {isSearching ? (
               <div className="p-4 flex items-center justify-center text-[#D4C9BE] text-xs md:text-sm">
-                <Loader className="animate-spin mr-2" size={16} /> Searching encrypted index...
+                <Loader className="animate-spin mr-2" size={16} /> Searching your files...
               </div>
             ) : searchResults.length > 0 ? (
               <div className="max-h-80 overflow-y-auto custom-scrollbar">
@@ -118,7 +128,9 @@ const Topbar = ({ user }) => {
                   <div 
                     key={file._id}
                     onClick={() => {
-                      file.isFolder ? alert("Navigate to folder logic needed") : window.open(file.fileUrl, '_blank');
+                      onOpenSearchResult?.(file);
+                      setIsSearchOpen(false);
+                      setSearchQuery('');
                     }}
                     className="flex items-center gap-3 md:gap-4 px-4 py-3 hover:bg-[#F1EFEC] cursor-pointer transition-colors border-b border-[#F1EFEC] last:border-0"
                   >
@@ -191,7 +203,7 @@ const Topbar = ({ user }) => {
                 )}
               </div>
               <div className="p-2 md:p-3 bg-[#F1EFEC] text-center border-t border-[#D4C9BE]/10">
-                <button className="text-[10px] md:text-xs font-bold text-[#123458] hover:underline">View Full Audit Trail</button>
+                <button onClick={() => { setIsNotifOpen(false); navigate('/dashboard/activity'); }} className="text-[10px] md:text-xs font-bold text-[#123458] hover:underline">View Full Audit Trail</button>
               </div>
             </div>
           )}

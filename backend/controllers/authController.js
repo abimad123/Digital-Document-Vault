@@ -25,6 +25,7 @@ exports.register = async (req, res) => {
       email,
       password,
       tier: tier || 'Personal',
+      storageLimit: tier === 'Enterprise' ? 'Unlimited' : tier === 'Professional' ? 51200 : 1024,
       isVerified: true, // Auto-verify for instant access
     });
 
@@ -119,9 +120,13 @@ exports.getMe = async (req, res) => {
     const user = await User.findById(req.user.id).select('-password');
     
     // 1. Calculate Storage Used
-    const files = await File.find({ user: req.user.id });
+    const files = await File.find({ user: req.user.id, isFolder: false });
     let totalSizeMB = 0;
-    files.forEach(file => { totalSizeMB += parseFloat(file.fileSize) || 0; });
+    files.forEach(file => {
+      totalSizeMB += typeof file.sizeBytes === 'number'
+        ? file.sizeBytes / 1024 / 1024
+        : parseFloat(file.fileSize) || 0;
+    });
 
     // 2. Define Tier Logic
     const tier = user.tier || 'Personal'; 
@@ -137,7 +142,7 @@ exports.getMe = async (req, res) => {
     let percent = 0;
 
     if (tier === 'Professional') {
-      limitMB = 15360; // 15 GB (15 * 1024)
+      limitMB = 51200; // 50 GB (50 * 1024)
     } else if (tier === 'Enterprise') {
       limitMB = 'Unlimited'; // Special flag
     }
@@ -157,7 +162,7 @@ exports.getMe = async (req, res) => {
         renewalDate: renewalDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
       },
       stats: {
-        fileCount: files.length,
+        fileCount: files.filter(file => !file.trashedAt).length,
         storageUsed: totalSizeMB.toFixed(2),
         storageLimit: limitMB,
         storagePercent: percent

@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  FileText, 
+  FileText,
   History, 
   User, 
-  Settings, 
   ChevronLeft, 
   ChevronRight,
   ShieldCheck,
-  LogOut,  Home,  Menu, X    
+  LogOut, Home, Menu, X, Star, Clock3, Trash2, HardDrive
 } from 'lucide-react';
 
 const Sidebar = ({ collapsed, setCollapsed, onLogout }) => {
@@ -18,10 +16,13 @@ const Sidebar = ({ collapsed, setCollapsed, onLogout }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const menuItems = [
-    { id: 'documents', label: 'Documents', icon: FileText, path: '/dashboard/documents' }, 
+    { id: 'documents', label: 'My Drive', icon: FileText, path: '/dashboard/documents' },
+    { id: 'starred', label: 'Starred', icon: Star, path: '/dashboard/starred' },
+    { id: 'recent', label: 'Recent', icon: Clock3, path: '/dashboard/recent' },
+    { id: 'trash', label: 'Trash', icon: Trash2, path: '/dashboard/trash' },
+    { id: 'storage', label: 'Storage', icon: HardDrive, path: '/dashboard/storage' },
     { id: 'activity', label: 'Activity', icon: History, path: '/dashboard/activity' },
     { id: 'profile', label: 'Profile', icon: User, path: '/dashboard/profile' },
-    { id: 'settings', label: 'Settings', icon: Settings, path: '/dashboard/settings' },
   ];
 
   const isActive = (path) => {

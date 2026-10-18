@@ -408,7 +408,7 @@ const Dashboard = ({ onLogout }) => {
         <Route path="starred" element={driveView()} />
         <Route path="recent" element={driveView()} />
         <Route path="trash" element={driveView()} />
-        <Route path="profile" element={<Profile />} />
+        <Route path="profile" element={<Profile onLogout={onLogout} onProfileUpdated={updated => setUser(previous => ({ ...previous, ...updated }))} />} />
         <Route path="activity" element={<ActivityLog />} />
         <Route path="storage" element={<StoragePage />} />
         <Route path="settings" element={<Navigate to="profile" replace />} />

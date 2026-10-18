@@ -174,13 +174,46 @@ exports.getMe = async (req, res) => {
   }
 };
 
+exports.updateProfile = async (req, res) => {
+  try {
+    const name = typeof req.body.name === 'string' ? req.body.name.trim().replace(/\s+/g, ' ') : '';
+    if (name.length < 2 || name.length > 80) {
+      return res.status(400).json({ success: false, msg: 'Name must be between 2 and 80 characters.' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, msg: 'Account not found.' });
+    user.name = name;
+    await user.save();
+    await logActivity(user.id, 'PROFILE_UPDATE', 'User updated their display name');
+    res.json({
+      success: true,
+      user: {
+        _id: user.id,
+        name: user.name,
+        email: user.email,
+        tier: user.tier,
+        isVerified: user.isVerified,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.status(500).json({ success: false, msg: 'Could not update your profile.' });
+  }
+};
+
 // --- CHANGE PASSWORD ---
 exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
+    if (typeof currentPassword !== 'string' || typeof newPassword !== 'string' || newPassword.length < 8) {
+      return res.status(400).json({ success: false, msg: 'Enter your current password and a new password of at least 8 characters.' });
+    }
     
     // 1. Find User (and get the password field which is usually hidden)
     const user = await User.findById(req.user.id).select('+password');
+    if (!user) return res.status(404).json({ success: false, msg: 'Account not found.' });
     
     // 2. Check if Current Password matches
     const isMatch = await bcrypt.compare(currentPassword, user.password);

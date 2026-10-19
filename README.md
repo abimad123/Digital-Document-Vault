@@ -2,7 +2,7 @@
 
 VaultX is a full-stack document manager built with React/Vite, Express, MongoDB, and Cloudinary. This repository also includes a **PyMongo and machine-learning analytics module** for a MongoDB course project.
 
-The dashboard has Drive-style My Drive, Starred, Recent, and Trash views. It supports nested folders with breadcrumbs, grid and list layouts, search, multi-file upload, selection, rename, move, download, details, right-click actions, and dragging an item onto a folder. Trash supports restore and permanent deletion. Deleting from My Drive first moves items to Trash; items in Trash continue to use storage until permanently deleted.
+The dashboard has Drive-style My Drive, Starred, Recent, and Trash views. It supports nested folders with breadcrumbs, grid and list layouts, search, file-type filters, multi-file upload with progress, selection and select all, rename, move, download, details, right-click actions, and dragging an item onto a folder. My Drive also shows quick access and storage information. The navigation adapts to mobile screens. Trash supports restore and permanent deletion. Deleting from My Drive first moves items to Trash; items in Trash continue to use storage until permanently deleted.
 
 ## Project structure
 

@@ -1,203 +1,67 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  FileText,
-  History, 
-  User, 
-  ChevronLeft, 
-  ChevronRight,
-  ShieldCheck,
-  LogOut, Home, Menu, X, Star, Clock3, Trash2, HardDrive
+import React, { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  ChevronLeft, ChevronRight, Clock3, FileText, HardDrive, History,
+  Home, LogOut, ShieldCheck, Star, Trash2, User, X
 } from 'lucide-react';
 
-const Sidebar = ({ collapsed, setCollapsed, onLogout }) => {
+const items = [
+  { label: 'My Drive', icon: FileText, path: '/dashboard/documents' },
+  { label: 'Starred', icon: Star, path: '/dashboard/starred' },
+  { label: 'Recent', icon: Clock3, path: '/dashboard/recent' },
+  { label: 'Trash', icon: Trash2, path: '/dashboard/trash' },
+  { label: 'Storage', icon: HardDrive, path: '/dashboard/storage' },
+  { label: 'Activity', icon: History, path: '/dashboard/activity' },
+  { label: 'Profile', icon: User, path: '/dashboard/profile' }
+];
+
+const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  useEffect(() => { setMobileOpen(false); }, [location.pathname, setMobileOpen]);
 
-  const menuItems = [
-    { id: 'documents', label: 'My Drive', icon: FileText, path: '/dashboard/documents' },
-    { id: 'starred', label: 'Starred', icon: Star, path: '/dashboard/starred' },
-    { id: 'recent', label: 'Recent', icon: Clock3, path: '/dashboard/recent' },
-    { id: 'trash', label: 'Trash', icon: Trash2, path: '/dashboard/trash' },
-    { id: 'storage', label: 'Storage', icon: HardDrive, path: '/dashboard/storage' },
-    { id: 'activity', label: 'Activity', icon: History, path: '/dashboard/activity' },
-    { id: 'profile', label: 'Profile', icon: User, path: '/dashboard/profile' },
-  ];
-
-  const isActive = (path) => {
-    if (path === '/dashboard' && location.pathname === '/dashboard') return true;
-    if (path !== '/dashboard' && location.pathname.startsWith(path)) return true;
-    return false;
+  const go = path => {
+    setMobileOpen(false);
+    navigate(path);
   };
-
-  const handleLogout = () => {
-    localStorage.removeItem('vaultToken');
-    if (onLogout) onLogout();
+  const signOut = () => {
+    setMobileOpen(false);
+    onLogout?.();
     navigate('/');
   };
 
-  const handleNavigation = (path) => {
-    setMobileMenuOpen(false); // Close mobile menu after clicking
-    navigate(path);
-  };
+  return <>
+    {mobileOpen && <button aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-[55] bg-[#071D32]/60 lg:hidden" />}
+    <aside id="dashboard-navigation" aria-label="Dashboard navigation" className={`fixed inset-y-0 left-0 z-[60] flex flex-col bg-[#123458] text-[#E5EDF5] shadow-xl transition-[width,transform] duration-200 ${mobileOpen ? 'w-72 translate-x-0' : 'w-72 -translate-x-full'} ${collapsed ? 'lg:w-20' : 'lg:w-64'} lg:translate-x-0`}>
+      <div className={`flex h-20 shrink-0 items-center border-b border-white/10 px-5 ${collapsed ? 'lg:justify-center' : 'justify-between'}`}>
+        <button onClick={() => go('/dashboard/documents')} className="flex min-w-0 items-center gap-3 text-left" aria-label="VaultX My Drive">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#E9D7BE]"><ShieldCheck size={24} /></span>
+          <span className={`font-serif text-2xl font-bold text-white ${collapsed ? 'lg:hidden' : ''}`}>VaultX</span>
+        </button>
+        <button onClick={() => setMobileOpen(false)} aria-label="Close menu" className="rounded-lg p-2 text-white hover:bg-white/10 lg:hidden"><X size={20} /></button>
+      </div>
 
-  // Close mobile menu on route change automatically as backup
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
-
-  return (
-    <>
-      {/* --- MOBILE TOGGLE BUTTON (Floating bottom right) --- */}
-      <button 
-        onClick={() => setMobileMenuOpen(true)}
-        // Added shadow-emerald-500/20 to give it a subtle glowing presence
-        className="lg:hidden fixed bottom-6 right-6 z-[60] bg-[#123458] text-[#F1EFEC] p-4 rounded-full shadow-[0_0_20px_rgba(18,52,88,0.4)] hover:scale-105 active:scale-95 transition-all border-2 border-[#D4C9BE]/30"
-      >
-        <Menu size={24} />
-      </button>
-
-      {/* --- MOBILE OVERLAY (Darkens background when menu is open) --- */}
-      {mobileMenuOpen && (
-        <div 
-          onClick={() => setMobileMenuOpen(false)}
-          className="lg:hidden fixed inset-0 bg-black/50 z-[65] backdrop-blur-sm transition-opacity"
-        />
-      )}
-
-      {/* --- SIDEBAR --- */}
-      <aside 
-        className={`fixed left-0 top-0 h-full bg-[#123458] border-r border-[#D4C9BE]/20 transition-all duration-300 ease-in-out flex flex-col
-          /* Mobile Logic: Hide by default, slide in when mobileMenuOpen is true. Always full width (w-64) on mobile */
-          ${mobileMenuOpen ? 'translate-x-0 w-64 z-[70]' : '-translate-x-full lg:translate-x-0 z-50'}
-          /* Desktop Logic: width based on collapsed state */
-          ${collapsed ? 'lg:w-20' : 'lg:w-64'}
-        `}
-      >
-        {/* --- Brand Header --- */}
-        <div className="h-20 flex items-center justify-between px-6 mb-2 relative">
-          {(!collapsed || mobileMenuOpen) && (
-            <div 
-              onClick={() => handleNavigation('/dashboard')}
-              className="flex items-center gap-2 cursor-pointer group"
-            >
-              <div className="bg-[#D4C9BE]/10 p-1.5 rounded-lg group-hover:bg-[#D4C9BE]/20 transition-colors">
-                <ShieldCheck size={24} className="text-[#D4C9BE]" />
-              </div>
-              <span className="font-serif font-black text-[#F1EFEC] text-xl tracking-wider">VaultX</span>
-            </div>
-          )}
-          
-          {/* Collapsed Logo (Only visible on Desktop when collapsed) */}
-          {(collapsed && !mobileMenuOpen) && (
-            <div 
-              onClick={() => handleNavigation('/dashboard')}
-              className="w-full flex justify-center cursor-pointer hidden lg:flex mt-4"
-            >
-              <ShieldCheck size={28} className="text-[#D4C9BE] hover:scale-110 transition-transform" />
-            </div>
-          )}
-
-          {/* FIX: BIG, EYE-CATCHING DESKTOP TOGGLE BUTTON */}
-          <button 
-            onClick={() => setCollapsed(!collapsed)}
-            // Changed to w-10 h-10, bright white/beige background, thick blue border, and strong drop shadow
-            className="hidden lg:flex items-center justify-center w-10 h-10 rounded-full bg-[#F1EFEC] text-[#123458] hover:bg-[#D4C9BE] hover:scale-110 transition-all duration-300 absolute -right-5 top-10 shadow-[0_0_15px_rgba(0,0,0,0.5)] border-[3px] border-[#123458] z-50"
-            title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-          >
-            {collapsed 
-              ? <ChevronRight size={24} strokeWidth={3} className="ml-0.5" /> 
-              : <ChevronLeft size={24} strokeWidth={3} className="mr-0.5" />
-            }
-          </button>
-
-          {/* Mobile Close Button */}
-          <button 
-            onClick={() => setMobileMenuOpen(false)}
-            className="lg:hidden text-[#D4C9BE] hover:text-[#F1EFEC] p-2"
-          >
-             <X size={24} />
-          </button>
+      <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
+        <p className={`px-3 pb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#AFC3D5] ${collapsed ? 'lg:hidden' : ''}`}>Workspace</p>
+        <div className="space-y-1">
+          {items.map(item => {
+            const active = location.pathname.startsWith(item.path);
+            return <button key={item.path} title={collapsed ? item.label : undefined} aria-current={active ? 'page' : undefined} onClick={() => go(item.path)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${collapsed ? 'lg:justify-center' : ''} ${active ? 'bg-white text-[#123458] shadow-sm' : 'text-[#C7D6E3] hover:bg-white/10 hover:text-white'}`}>
+              <item.icon size={19} className="shrink-0" />
+              <span className={collapsed ? 'lg:hidden' : ''}>{item.label}</span>
+            </button>;
+          })}
         </div>
+        <div className="my-5 border-t border-white/10" />
+        <button onClick={() => go('/')} title={collapsed ? 'Back to home' : undefined} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-[#C7D6E3] transition hover:bg-white/10 hover:text-white ${collapsed ? 'lg:justify-center' : ''}`}><Home size={19} /><span className={collapsed ? 'lg:hidden' : ''}>Back to home</span></button>
+      </nav>
 
-        {/* --- Navigation Menu --- */}
-        <nav className="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar py-4 mt-2">
-          
-          {/* Added Home Link */}
-          <button
-            onClick={() => handleNavigation('/')}
-            className="w-full flex items-center justify-center lg:justify-start gap-4 p-3 rounded-xl text-[#D4C9BE] hover:bg-[#F1EFEC]/10 hover:text-white transition-all group relative mb-6 border border-dashed border-[#D4C9BE]/20"
-            title="Go to Homepage"
-          >
-            <Home size={22} className="transition-colors group-hover:text-white" />
-            {(!collapsed || mobileMenuOpen) && (
-              <span className="font-bold text-sm tracking-wide">Back to Home</span>
-            )}
-            {/* Tooltip for collapsed state (Desktop only) */}
-            {(collapsed && !mobileMenuOpen) && (
-              <div className="absolute left-14 top-1/2 -translate-y-1/2 bg-[#030303] text-[#F1EFEC] text-xs font-bold px-3 py-1.5 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[60] shadow-xl hidden lg:block">
-                Home
-              </div>
-            )}
-          </button>
-
-          <div className="h-px bg-[#D4C9BE]/10 my-4" />
-
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleNavigation(item.path)}
-              className={`relative w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group ${
-                isActive(item.path)
-                  ? 'bg-[#F1EFEC] text-[#123458] shadow-lg shadow-black/20 translate-x-1 font-bold' 
-                  : 'text-[#D4C9BE] hover:bg-[#F1EFEC]/10 hover:text-white'
-              }`}
-            >
-              {/* Active Indicator Line */}
-              {isActive(item.path) && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#123458] rounded-r-full" />
-              )}
-
-              <item.icon 
-                size={22} 
-                className={`transition-colors flex-shrink-0 ${isActive(item.path) ? 'text-[#123458]' : 'text-[#D4C9BE] group-hover:text-white'}`} 
-              />
-              
-              {(!collapsed || mobileMenuOpen) && (
-                <span className="text-sm tracking-wide">{item.label}</span>
-              )}
-              
-              {/* Tooltip for collapsed state (Desktop only) */}
-              {(collapsed && !mobileMenuOpen) && (
-                <div className="absolute left-14 top-1/2 -translate-y-1/2 bg-[#030303] text-[#F1EFEC] text-xs font-bold px-3 py-1.5 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[60] shadow-xl hidden lg:block">
-                  {item.label}
-                </div>
-              )}
-            </button>
-          ))}
-        </nav>
-        
-        {/* --- User / Logout Section --- */}
-        <div className="p-4 border-t border-[#D4C9BE]/10 bg-[#0f2b4a]">
-           <button 
-             onClick={handleLogout}
-             className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl border border-transparent hover:bg-rose-500/10 hover:border-rose-500/20 group transition-all ${
-               (collapsed && !mobileMenuOpen) ? 'justify-center' : ''
-             }`}
-           >
-             <LogOut size={20} className="text-[#D4C9BE] group-hover:text-rose-500 transition-colors flex-shrink-0" />
-             {(!collapsed || mobileMenuOpen) && (
-               <div className="flex flex-col items-start overflow-hidden">
-                  <span className="text-[#F1EFEC] group-hover:text-rose-500 font-bold text-sm tracking-wide transition-colors truncate">Sign Out</span>
-                  <span className="text-[10px] text-[#D4C9BE]/50 uppercase tracking-wide truncate">End Session</span>
-               </div>
-             )}
-           </button>
-        </div>
-      </aside>
-    </>
-  );
+      <div className="border-t border-white/10 p-3">
+        <button onClick={signOut} title={collapsed ? 'Sign out' : undefined} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#C7D6E3] transition hover:bg-white/10 hover:text-white ${collapsed ? 'lg:justify-center' : ''}`}><LogOut size={19} /><span className={collapsed ? 'lg:hidden' : ''}>Sign out</span></button>
+      </div>
+      <button onClick={() => setCollapsed(value => !value)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} className="absolute -right-4 top-9 hidden h-8 w-8 items-center justify-center rounded-full border border-[#DCE4EA] bg-white text-[#123458] shadow-md hover:bg-[#F1EFEC] lg:flex">{collapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}</button>
+    </aside>
+  </>;
 };
 
 export default Sidebar;

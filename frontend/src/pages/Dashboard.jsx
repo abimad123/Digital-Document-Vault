@@ -14,6 +14,7 @@ import Profile from './ProfilePage';
 import StoragePage from './StoragePage';
 import ActivityLog from './ActivityLog';
 import { API_BASE_URL } from '../config';
+import { clearSession, getValidToken } from '../auth/session';
 
 const viewNames = { documents: 'My Drive', starred: 'Starred', recent: 'Recent', trash: 'Trash' };
 const formatDate = (value) => value ? new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
@@ -32,7 +33,8 @@ const fileKind = file => file.isFolder ? 'folder' : file.fileType?.startsWith('i
 const itemType = file => file.isFolder ? 'Folder' : file.fileType?.startsWith('image/') ? 'Image' : (file.fileName?.split('.').pop() || 'File').toUpperCase();
 
 async function request(path, method = 'GET', body) {
-  const token = localStorage.getItem('vaultToken');
+  const token = getValidToken();
+  if (!token) throw new Error('Your session expired. Please sign in again.');
   const headers = { Authorization: `Bearer ${token}` };
   if (body && !(body instanceof FormData)) headers['Content-Type'] = 'application/json';
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -40,6 +42,10 @@ async function request(path, method = 'GET', body) {
     body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined
   });
   const data = await response.json().catch(() => ({}));
+  if (response.status === 401) {
+    clearSession();
+    throw new Error('Your session expired. Please sign in again.');
+  }
   if (!response.ok || !data.success) throw new Error(data.message || data.msg || `Request failed (${response.status})`);
   return data;
 }

@@ -8,7 +8,7 @@ const File = require('../models/File');
 // This handles creating a new user and authorizing them instantly
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, tier, cardData } = req.body;
+    const { name, email, password } = req.body;
 
     // 1. Check if user exists
     let user = await User.findOne({ email });
@@ -24,30 +24,12 @@ exports.register = async (req, res) => {
       name,
       email,
       password,
-      tier: tier || 'Personal',
-      storageLimit: tier === 'Enterprise' ? 'Unlimited' : tier === 'Professional' ? 51200 : 1024,
+      tier: 'Personal',
+      storageLimit: 1024,
       isVerified: true, // Auto-verify for instant access
     });
 
-    // 3. SECURE BILLING LOGIC
-    // If Professional/Enterprise, save card data. 
-    // If Personal, we still set isPaid: true but leave card fields empty.
-    if (tier !== 'Personal' && cardData) {
-      user.billing = {
-        cardNumber: cardData.cardNumber,
-        expiry: cardData.expiry,
-        cvc: cardData.cvc,
-        isPaid: true
-      };
-    } else {
-      user.billing = {
-        cardNumber: undefined, // Explicitly undefined to avoid schema validation issues
-        expiry: undefined,
-        cvc: undefined,
-        isPaid: true // Free tier is considered "paid" / active
-      };
-    }
-
+    // Registration never accepts plan changes or card details from the client.
     // 4. Hash Password
     const salt = await bcrypt.genSalt(12); // Using 12 rounds for better security
     user.password = await bcrypt.hash(password, salt);

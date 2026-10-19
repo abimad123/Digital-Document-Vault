@@ -1,351 +1,125 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  HardDrive, Image as ImageIcon, FileText, FileQuestion, 
-  Zap, Building2, User, CheckCircle2, 
-  X, CreditCard, Loader2 
-} from 'lucide-react';
-import { API_BASE_URL } from '../config'; 
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, FileText, HardDrive, Image, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { API_BASE_URL } from '../config';
+import { clearSession, getValidToken } from '../auth/session';
 
-const StoragePage = () => {
-  const [isYearly, setIsYearly] = useState(true);
-  const [hoveredTier, setHoveredTier] = useState(1);
+const MB = 1024 * 1024;
+const plans = [
+  { name: 'Personal', capacity: '1 GB', limit: 1024 },
+  { name: 'Professional', capacity: '50 GB', limit: 51200 },
+  { name: 'Enterprise', capacity: 'Unlimited', limit: Infinity }
+];
+const bytesFor = file => typeof file.sizeBytes === 'number' ? file.sizeBytes : (parseFloat(file.fileSize) || 0) * MB;
+const formatSize = bytes => bytes >= 1024 * MB ? `${(bytes / (1024 * MB)).toFixed(2)} GB` : bytes >= MB ? `${(bytes / MB).toFixed(2)} MB` : `${Math.round(bytes / 1024)} KB`;
+
+async function api(path, options = {}) {
+  const token = getValidToken();
+  if (!token) throw new Error('Your session expired. Please sign in again.');
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: { Authorization: `Bearer ${token}`, ...(options.body ? { 'Content-Type': 'application/json' } : {}) }
+  });
+  const data = await response.json().catch(() => ({}));
+  if (response.status === 401) clearSession();
+  if (!response.ok || !data.success) throw new Error(data.message || data.msg || `Request failed (${response.status})`);
+  return data;
+}
+
+export default function StoragePage() {
+  const [account, setAccount] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [pending, setPending] = useState(null);
   const [loading, setLoading] = useState(true);
-  
-  // Real User & Storage State
-  const [currentTier, setCurrentTier] = useState('Personal');
-  const [stats, setStats] = useState({ storageUsed: 0, storageLimit: 1024, storagePercent: 0 });
-  const [breakdown, setBreakdown] = useState({ docs: 0, images: 0, other: 0 });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
-  // States for Checkout Modal
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-
-  // --- 1. FETCH REAL DATA & CALCULATE STORAGE ---
-  const fetchStorageData = async () => {
-    const token = localStorage.getItem('vaultToken');
+  const load = async () => {
+    setLoading(true);
+    setError('');
     try {
-      // A. Get User Info
-      const userRes = await fetch(`${API_BASE_URL}/api/auth/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const userData = await userRes.json();
-      
-      let limit = 1024;
-      if (userData.success && userData.user) {
-        // Read 'tier' from database
-        const userTier = userData.user.tier || 'Personal';
-        setCurrentTier(userTier);
-        
-        // Set limit based on tier
-        limit = userData.stats?.storageLimit ?? limit;
-        
-        setStats(prev => ({ ...prev, storageLimit: limit }));
-      }
-
-      // B. Get Files & Calculate Actual Storage Used
-      const filesRes = await fetch(`${API_BASE_URL}/api/files/all`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const filesData = await filesRes.json();
-
-      if (filesData.success) {
-        let docs = 0, images = 0, other = 0;
-        let totalUsed = 0;
-        
-        filesData.files.filter(file => !file.isFolder).forEach(file => {
-          const sizeMB = typeof file.sizeBytes === 'number'
-            ? file.sizeBytes / (1024 * 1024)
-            : parseFloat(file.fileSize) || 0;
-          totalUsed += sizeMB;
-          
-          const type = (file.fileType || '').toLowerCase();
-          
-          if (type.includes('pdf') || type.includes('doc') || type.includes('txt')) {
-            docs += sizeMB;
-          } else if (type.includes('image')) {
-            images += sizeMB;
-          } else if (!file.isFolder) {
-            other += sizeMB;
-          }
-        });
-
-        // Update Breakdown UI
-        setBreakdown({
-          docs: docs.toFixed(2),
-          images: images.toFixed(2),
-          other: other.toFixed(2)
-        });
-
-        // Update Total Stats UI
-        setStats(prev => ({
-          ...prev,
-          storageUsed: totalUsed.toFixed(2),
-          storagePercent: limit === 'Unlimited' ? 0 : Math.min(((totalUsed / limit) * 100), 100).toFixed(1)
-        }));
-      }
+      const [me, all, request] = await Promise.all([
+        api('/api/auth/me'), api('/api/files/all'), api('/api/auth/plan-request')
+      ]);
+      setAccount(me);
+      setFiles(all.files || []);
+      setPending(request.request);
     } catch (err) {
-      console.error("Failed to load storage data", err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+  useEffect(() => { load(); }, []);
 
-  useEffect(() => { fetchStorageData(); }, []);
+  const usage = useMemo(() => {
+    const result = { documents: 0, images: 0, other: 0, trash: 0, total: 0, count: 0 };
+    for (const file of files) {
+      if (file.isFolder) continue;
+      const bytes = bytesFor(file);
+      result.total += bytes;
+      if (file.trashedAt) result.trash += bytes;
+      const type = (file.fileType || '').toLowerCase();
+      if (type.startsWith('image/')) result.images += bytes;
+      else if (/pdf|document|text|word|sheet|presentation/.test(type) || /\.(pdf|docx?|txt|csv|xlsx?|pptx?)$/i.test(file.fileName || '')) result.documents += bytes;
+      else result.other += bytes;
+      result.count++;
+    }
+    return result;
+  }, [files]);
 
-  // --- 2. HANDLE UPGRADE PAYMENT ---
-  const handlePaymentSubmit = async () => {
-    setIsProcessing(true);
-    const token = localStorage.getItem('vaultToken');
+  const current = account?.user?.tier || 'Personal';
+  const currentIndex = Math.max(0, plans.findIndex(plan => plan.name === current));
+  const limit = plans[currentIndex].limit;
+  const limitBytes = limit * MB;
+  const percent = Number.isFinite(limitBytes) ? Math.min(100, usage.total / limitBytes * 100) : 0;
+  const largest = [...files].filter(file => !file.isFolder && !file.trashedAt).sort((a, b) => bytesFor(b) - bytesFor(a)).slice(0, 5);
+  const card = 'rounded-3xl border border-[#DCE5ED] bg-white p-5 shadow-[0_14px_38px_-30px_#123458] sm:p-7';
 
+  const requestUpgrade = async plan => {
+    setBusy(true);
+    setError('');
+    setNotice('');
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/upgrade-plan`, {
-        method: 'PUT',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json' 
-        },
-        body: JSON.stringify({ plan: selectedPlan.name }) // Sends 'Professional' or 'Enterprise'
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setTimeout(() => {
-          setIsProcessing(false);
-          setPaymentSuccess(true);
-          fetchStorageData(); // Refresh the page data instantly to show the new limits!
-        }, 1500);
-      } else {
-        alert(data.message || "Upgrade failed");
-        setIsProcessing(false);
-      }
-    } catch (error) {
-      alert("Network error. Please try again.");
-      setIsProcessing(false);
+      const data = await api('/api/auth/plan-request', { method: 'POST', body: JSON.stringify({ plan }) });
+      setPending(data.request);
+      setNotice(`${plan} request submitted. Your current plan stays active while it is reviewed. No payment was taken.`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
     }
   };
 
-  const pricingTiers = [
-    { name: "Personal", price: 0, icon: User },
-    { name: "Professional", price: isYearly ? 300 : 600, icon: Zap },
-    { name: "Enterprise", price: 2000, icon: Building2 }
-  ];
-
-  if (loading) {
-    return <div className="flex-1 flex items-center justify-center bg-[#F1EFEC]"><Loader2 className="animate-spin text-[#123458]" size={32} /></div>;
-  }
-
-  // Calculate widths for the progress bar segments
-  const totalCalculated = parseFloat(breakdown.docs) + parseFloat(breakdown.images) + parseFloat(breakdown.other);
-  const getWidth = (val) => totalCalculated === 0 ? 0 : (parseFloat(val) / totalCalculated) * 100;
-
   return (
-    <div className="flex-1 overflow-y-auto bg-[#F1EFEC] p-4 md:p-8 font-inter relative">
-      <div className="max-w-6xl mx-auto space-y-8 pb-12">
-        
-        <div className="flex items-center gap-3 text-[#123458]">
-          <div className="p-3 bg-white rounded-xl shadow-sm border border-[#D4C9BE]/30">
-            <HardDrive size={28} />
+    <main className="min-w-0 flex-1 overflow-y-auto bg-[#F5F7F9] p-4 text-[#123458] sm:p-6 lg:p-9">
+      <div className="mx-auto max-w-6xl space-y-6 pb-10">
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#5F7890]">Your workspace</p><h1 className="mt-2 font-serif text-3xl font-bold sm:text-4xl">Manage storage</h1><p className="mt-2 text-sm text-[#526B82]">See what uses space and manage your plan.</p></div>
+          <button onClick={load} disabled={loading} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#D5E0E9] bg-white px-4 font-semibold hover:bg-[#EEF4F8] disabled:opacity-50"><RefreshCw size={17} /> Refresh</button>
+        </header>
+        {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error} {(!account && !loading) && <button onClick={load} className="ml-2 font-bold underline">Try again</button>}</div>}
+        {notice && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">{notice}</div>}
+        {loading && !account ? <div className="flex min-h-64 items-center justify-center"><Loader2 className="animate-spin" aria-label="Loading storage" /></div> : account && <>
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]">
+            <section className={card}>
+              <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2 text-sm font-bold"><HardDrive size={19} /> Storage used</div><p className="mt-5 text-3xl font-bold sm:text-4xl">{formatSize(usage.total)}</p><p className="mt-1 text-sm text-[#5F7890]">of {plans[currentIndex].capacity} · {usage.count} files including Trash</p></div><span className="rounded-full bg-[#E8F0F6] px-3 py-1.5 text-sm font-bold">{current}</span></div>
+              <div className="mt-7 h-4 overflow-hidden rounded-full bg-[#E7EDF2]" role="progressbar" aria-label="Storage used" aria-valuenow={Math.round(percent)} aria-valuemin="0" aria-valuemax="100"><div className={`h-full rounded-full ${percent >= 90 ? 'bg-red-500' : 'bg-[#123458]'}`} style={{ width: `${percent}%` }} /></div>
+              <div className="mt-3 flex justify-between text-sm font-medium text-[#526B82]"><span>{Number.isFinite(limit) ? `${percent.toFixed(1)}% used` : 'No set storage limit'}</span><span>{Number.isFinite(limit) ? `${formatSize(Math.max(0, limitBytes - usage.total))} available` : ''}</span></div>
+              <p className="mt-4 text-xs text-[#60778D]">Files in Trash continue to use storage until permanently deleted.</p>
+            </section>
+            <section className={`${card} bg-[#123458] text-white`}><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#BFD0E0]">Current plan</p><h2 className="mt-3 font-serif text-3xl font-bold">{current}</h2><p className="mt-2 text-sm text-[#D3E1ED]">{plans[currentIndex].capacity} storage capacity</p><div className="mt-7 flex flex-col gap-3"><Link to="/dashboard/documents" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-4 font-bold text-[#123458]">Open My Drive</Link><Link to="/dashboard/trash" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/40 px-4 font-bold text-white"><Trash2 size={17} /> Review Trash</Link></div></section>
           </div>
-          <h1 className="text-3xl md:text-4xl font-black font-serif tracking-wide">Storage & Plans</h1>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Main Storage Bar */}
-          <div className="lg:col-span-2 bg-white rounded-[2rem] p-8 border border-[#D4C9BE]/50 shadow-sm relative overflow-hidden">
-            <h2 className="text-xl font-bold text-[#123458] mb-6">Storage Usage</h2>
-            
-            <div className="flex justify-between text-sm font-bold text-[#123458] mb-3">
-              <span className="text-2xl">{stats.storageUsed} <span className="text-sm opacity-60">MB Used</span></span>
-              <span className="opacity-50 flex items-end">
-                {stats.storageLimit === 'Unlimited' ? 'Unlimited' : `${stats.storageLimit} MB Total`}
-              </span>
-            </div>
-            
-            {/* Dynamic Multi-color Progress Bar */}
-            <div className="w-full h-4 bg-[#F1EFEC] rounded-full overflow-hidden flex shadow-inner mb-8">
-              {totalCalculated === 0 ? (
-                 <div className="bg-[#D4C9BE]/30 h-full w-full"></div>
-              ) : (
-                <>
-                  <div className="bg-[#123458] h-full transition-all duration-1000" style={{ width: `${getWidth(breakdown.docs)}%` }}></div>
-                  <div className="bg-[#D4C9BE] h-full transition-all duration-1000" style={{ width: `${getWidth(breakdown.images)}%` }}></div>
-                  <div className="bg-rose-400 h-full transition-all duration-1000" style={{ width: `${getWidth(breakdown.other)}%` }}></div>
-                </>
-              )}
-            </div>
-
-            {/* Legend / Breakdown */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex items-center gap-3 p-3 bg-[#F1EFEC]/50 rounded-xl">
-                <div className="w-3 h-3 rounded-full bg-[#123458]"></div>
-                <div>
-                  <p className="text-xs font-bold text-[#123458]/60 uppercase tracking-wider">Documents</p>
-                  <p className="font-bold text-[#123458]">{breakdown.docs} MB</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-[#F1EFEC]/50 rounded-xl">
-                <div className="w-3 h-3 rounded-full bg-[#D4C9BE]"></div>
-                <div>
-                  <p className="text-xs font-bold text-[#123458]/60 uppercase tracking-wider">Images</p>
-                  <p className="font-bold text-[#123458]">{breakdown.images} MB</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-[#F1EFEC]/50 rounded-xl">
-                <div className="w-3 h-3 rounded-full bg-rose-400"></div>
-                <div>
-                  <p className="text-xs font-bold text-[#123458]/60 uppercase tracking-wider">Other</p>
-                  <p className="font-bold text-[#123458]">{breakdown.other} MB</p>
-                </div>
-              </div>
-            </div>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <section className={card}><h2 className="font-serif text-2xl font-bold">What uses your storage</h2><div className="mt-5 space-y-4">{[
+              ['Documents', usage.documents, FileText, 'bg-[#123458]'], ['Images', usage.images, Image, 'bg-[#4E8CB4]'], ['Other files', usage.other, HardDrive, 'bg-[#D4924D]'], ['In Trash', usage.trash, Trash2, 'bg-[#A55D62]']
+            ].map(([label, bytes, Icon, color]) => <div key={label} className="flex min-w-0 items-center gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white ${color}`}><Icon size={18} /></span><span className="min-w-0 flex-1 text-sm font-semibold">{label}</span><span className="text-sm font-bold">{formatSize(bytes)}</span></div>)}</div><p className="mt-5 text-xs text-[#60778D]">Trash is also counted in the file categories above.</p></section>
+            <section className={card}><h2 className="font-serif text-2xl font-bold">Largest active files</h2><div className="mt-4 divide-y divide-[#E7EDF2]">{largest.length ? largest.map(file => <div key={file._id} className="flex min-w-0 items-center gap-3 py-3"><FileText size={17} className="shrink-0 text-[#5F7890]" /><span className="min-w-0 flex-1 truncate text-sm font-medium" title={file.fileName}>{file.fileName}</span><span className="shrink-0 text-sm font-semibold">{formatSize(bytesFor(file))}</span></div>) : <p className="py-4 text-sm text-[#60778D]">No active files yet.</p>}</div><Link to="/dashboard/documents" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#123458] hover:underline">Manage files <ArrowRight size={16} /></Link></section>
           </div>
-
-          {/* Current Plan Status */}
-          <div className="bg-[#123458] text-[#F1EFEC] rounded-[2rem] p-8 shadow-xl flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
-            <div className="relative z-10">
-              <p className="text-xs font-bold text-[#D4C9BE] uppercase tracking-widest mb-2">Current Plan</p>
-              <h3 className="text-3xl font-black font-serif mb-1">{currentTier}</h3>
-              <p className="text-[#F1EFEC]/70 text-sm font-medium">
-                {currentTier === 'Enterprise' ? 'Maximum security & priority support.' : 
-                 currentTier === 'Professional' ? 'Advanced security & multi-sync.' : 
-                 'Basic cryptographic sovereignty.'}
-              </p>
-            </div>
-            
-            <div className="space-y-3 mt-8 relative z-10">
-              <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                <span className="text-sm font-medium text-[#F1EFEC]/70">Bandwidth</span>
-                <span className="font-bold text-sm">
-                  {currentTier === 'Personal' ? 'Standard' : 'High-Speed'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[#F1EFEC]/70">Support</span>
-                <span className="font-bold text-sm">
-                  {currentTier === 'Enterprise' ? '24/7 Priority' : 'Community'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* --- BOTTOM SECTION: Upgrade Plans --- */}
-        <div className="pt-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-6">
-            <h2 className="text-2xl md:text-3xl font-black text-[#0c1f33] font-serif">Upgrade Your Vault</h2>
-            
-            <div className="flex items-center gap-3 text-sm font-bold bg-white p-1.5 rounded-full border border-[#D4C9BE]/50 shadow-sm">
-              <button onClick={() => setIsYearly(false)} className={`px-4 py-2 rounded-full transition-all ${!isYearly ? 'bg-[#D4C9BE]/30 text-[#123458]' : 'text-[#123458]/50 hover:text-[#123458]'}`}>
-                Monthly
-              </button>
-              <button onClick={() => setIsYearly(true)} className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 ${isYearly ? 'bg-[#123458] text-[#F1EFEC]' : 'text-[#123458]/50 hover:text-[#123458]'}`}>
-                Yearly <span className={`text-[10px] px-2 py-0.5 rounded-full ${isYearly ? 'bg-white/20' : 'bg-[#123458]/10 text-[#123458]'}`}>-50%</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {pricingTiers.map((tier, i) => {
-              const isCurrent = tier.name.toLowerCase() === currentTier.toLowerCase();
-              
-              return (
-                <div key={i} onMouseEnter={() => setHoveredTier(i)} className={`p-8 rounded-[2rem] flex flex-col transition-all duration-300 border-2 ${isCurrent ? 'border-[#123458] bg-[#123458]/5 cursor-default' : hoveredTier === i ? 'bg-[#123458] text-[#F1EFEC] scale-105 shadow-2xl z-10 border-[#123458] cursor-pointer' : 'bg-white text-[#030303] border-[#D4C9BE]/30 hover:border-[#D4C9BE] cursor-pointer'}`}>
-                  <div className="mb-6">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 ${hoveredTier === i && !isCurrent ? 'bg-white/10' : 'bg-[#123458]/10'}`}>
-                      <tier.icon size={24} className={hoveredTier === i && !isCurrent ? 'text-[#F1EFEC]' : 'text-[#123458]'} />
-                    </div>
-                    <h3 className="text-xl font-black mb-2">{tier.name}</h3>
-                    <div className="flex items-end gap-1">
-                      <span className="text-4xl font-black">₹{tier.price}</span>
-                      <span className="text-sm pb-1 font-medium opacity-60">/mo</span>
-                    </div>
-                  </div>
-                  
-                  <ul className="space-y-4 mb-8 flex-1">
-                    {["E2E Encryption", i > 0 ? "AI Security Audits" : "Basic Security", i > 0 ? "Cross-Platform Sync" : "Web Only", i === 2 ? "24/7 Priority Support" : "Standard Support"].map((feat, idx) => (
-                      <li key={idx} className="flex items-center gap-3 text-sm font-medium">
-                        <CheckCircle2 size={16} className={hoveredTier === i && !isCurrent ? 'text-[#D4C9BE]' : 'text-[#123458]'} />
-                        <span className={hoveredTier === i && !isCurrent ? 'text-[#F1EFEC]' : 'text-[#123458]/80'}>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  <button disabled={isCurrent} onClick={() => !isCurrent && setSelectedPlan(tier)} className={`w-full py-4 rounded-xl font-black text-sm transition-all ${isCurrent ? 'bg-transparent border-2 border-[#123458]/20 text-[#123458]/50 cursor-not-allowed' : hoveredTier === i ? 'bg-[#F1EFEC] text-[#123458] hover:bg-white shadow-lg' : 'bg-[#123458] text-[#F1EFEC] hover:opacity-90 shadow-lg'}`}>
-                    {isCurrent ? 'Current Plan' : 'Upgrade Now'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+          <section className={card}><div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-serif text-2xl font-bold">Storage plans</h2><p className="mt-2 text-sm text-[#526B82]">Upgrade requests are reviewed manually. Your plan changes only after approval; no card or payment is collected here.</p></div>{pending && <span className="rounded-full bg-amber-100 px-3 py-1.5 text-sm font-bold text-amber-900">{pending.plan} request pending</span>}</div><div className="mt-6 grid gap-4 md:grid-cols-3">{plans.map((plan, index) => <div key={plan.name} className={`flex flex-col rounded-2xl border p-5 ${index === currentIndex ? 'border-[#123458] bg-[#F1F6FA]' : 'border-[#DCE5ED]'}`}><p className="text-sm font-bold">{plan.name}</p><p className="mt-2 text-2xl font-bold">{plan.capacity}</p><p className="mt-2 flex-1 text-sm text-[#60778D]">Storage capacity</p><button disabled={index <= currentIndex || !!pending || busy} onClick={() => requestUpgrade(plan.name)} className="mt-5 min-h-11 rounded-xl bg-[#123458] px-4 text-sm font-bold text-white disabled:cursor-default disabled:bg-[#E4EBF1] disabled:text-[#5B7185]">{index === currentIndex ? 'Current plan' : pending ? 'Request pending' : index > currentIndex ? 'Request upgrade' : 'Included in your plan'}</button></div>)}</div></section>
+        </>}
       </div>
-
-      {/* --- MOCK CHECKOUT MODAL --- */}
-      {selectedPlan && (
-        <div className="fixed inset-0 z-[100] bg-[#123458]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl p-8 w-full max-w-md relative shadow-2xl">
-            
-            {!isProcessing && !paymentSuccess && (
-              <button onClick={() => setSelectedPlan(null)} className="absolute top-4 right-4 p-2 text-[#123458]/50 hover:text-[#123458] hover:bg-[#F1EFEC] rounded-full transition-colors">
-                <X size={20} />
-              </button>
-            )}
-
-            {paymentSuccess ? (
-              <div className="text-center py-8 animate-in zoom-in duration-500">
-                <div className="w-20 h-20 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle2 size={40} />
-                </div>
-                <h3 className="text-2xl font-black text-[#123458] mb-2 font-serif">Upgrade Complete!</h3>
-                <p className="text-[#123458]/70 mb-8">Welcome to the {selectedPlan.name} tier. Your vault capacity has been expanded.</p>
-                <button onClick={() => { setPaymentSuccess(false); setSelectedPlan(null); }} className="w-full py-4 bg-[#123458] text-white rounded-xl font-bold hover:opacity-90 transition-all active:scale-95">
-                  Return to Dashboard
-                </button>
-              </div>
-            ) : (
-              <>
-                <h3 className="text-2xl font-black text-[#123458] mb-6 font-serif flex items-center gap-3">
-                  <CreditCard className="text-[#D4C9BE]" /> Secure Checkout
-                </h3>
-                
-                <div className="bg-[#F1EFEC] p-5 rounded-2xl mb-6 border border-[#D4C9BE]/50">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-[#123458]">{selectedPlan.name} Plan</span>
-                    <span className="font-black text-[#123458]">₹{selectedPlan.price}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm text-[#123458]/60">
-                    <span>Billing Cycle</span>
-                    <span>{isYearly ? 'Annually (-50%)' : 'Monthly'}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-4 mb-8">
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-[#123458] mb-1 block">Card Information</label>
-                    <div className="w-full border-2 border-[#D4C9BE]/30 rounded-xl px-4 py-3 flex items-center justify-between text-[#123458]/50 bg-white">
-                      <span>**** **** **** 4242</span>
-                      <span className="text-xs">MM/YY</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-center text-[#123458] flex items-center justify-center gap-1 font-bold bg-[#D4C9BE]/20 py-2 rounded-lg">
-                    Payment system is currently in Demo Mode
-                  </p>
-                </div>
-
-                <button onClick={handlePaymentSubmit} disabled={isProcessing} className="w-full py-4 bg-[#123458] text-[#F1EFEC] rounded-xl font-black hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl shadow-[#123458]/20 disabled:opacity-80 disabled:cursor-wait">
-                  {isProcessing ? <><Loader2 size={18} className="animate-spin" /> Processing Payment...</> : `Pay ₹${selectedPlan.price}`}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+    </main>
   );
-};
-
-export default StoragePage;
+}

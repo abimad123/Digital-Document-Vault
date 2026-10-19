@@ -7,22 +7,35 @@ import RegisterPage from './pages/RegisterPage';
 import ContactPage from './pages/ContactPage';
 import Dashboard from './pages/Dashboard'; 
 import ForgotPassword from './pages/ForgotPassword';
+import { clearSession, getValidToken, setSession, SESSION_EVENT, tokenExpiry } from './auth/session';
 
 const App = () => {
   // --- STATE MANAGEMENT ---
   // Initialize state directly from localStorage so it survives page refreshes instantly
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('vaultToken'));
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!getValidToken());
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [user, setUser] = useState({ name: 'User', tier: 'Free' });
 
-  // Backup check on mount to ensure session stays active
   useEffect(() => {
-    const token = localStorage.getItem('vaultToken');
-    if (token) {
-      setIsLoggedIn(true);
-    } else {
-      setIsLoggedIn(false);
-    }
+    let timer;
+    const syncSession = () => {
+      clearTimeout(timer);
+      const token = getValidToken();
+      setIsLoggedIn(!!token);
+      if (token) timer = setTimeout(syncSession, Math.min(tokenExpiry(token) - Date.now() + 10, 2147483647));
+    };
+    syncSession();
+    window.addEventListener(SESSION_EVENT, syncSession);
+    window.addEventListener('storage', syncSession);
+    window.addEventListener('focus', syncSession);
+    document.addEventListener('visibilitychange', syncSession);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener(SESSION_EVENT, syncSession);
+      window.removeEventListener('storage', syncSession);
+      window.removeEventListener('focus', syncSession);
+      document.removeEventListener('visibilitychange', syncSession);
+    };
   }, []);
 
   // Theme Toggle Effect
@@ -38,13 +51,12 @@ const App = () => {
 
   // Handle Login
   const handleLoginSuccess = (token) => {
-    if (token) localStorage.setItem('vaultToken', token);
-    setIsLoggedIn(true);
+    setIsLoggedIn(setSession(token));
   };
 
   // Handle Logout (Clears the session completely)
   const handleLogout = () => {
-    localStorage.removeItem('vaultToken');
+    clearSession();
     setIsLoggedIn(false);
   };
 

@@ -35,6 +35,10 @@ npm run dev
 
 Open the Vite URL shown in the terminal (normally `http://localhost:3000`). The API health route is `/api/auth/health`.
 
+For Vercel hosting, both the repository root and `frontend/` include SPA rewrites so refreshing a client route such as `/dashboard/documents` serves the React app. Deploy the frontend with `frontend/dist` as the output. The browser removes an expired eight-hour login token and returns the user to sign-in.
+
+Storage management shows actual file usage, including Trash, and supports upgrade requests stored in MongoDB. Requests require manual review; there is no payment processor or automatic tier activation. New accounts start on Personal (1 GB), and signup does not collect card details. The legacy `/api/auth/upgrade-plan` endpoint rejects direct tier changes.
+
 ## Run the MongoDB and ML project
 
 The Python module reads **metadata only**: filename, MIME type, size, and folder status. It does not read document contents or account/payment fields. The regression model estimates file size in MB; the classification model predicts whether a file is at least 5 MB. Models use file type, extension, and filename length, with a fixed 75/25 stratified split.

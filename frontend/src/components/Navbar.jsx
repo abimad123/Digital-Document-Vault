@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, CreditCard, Sparkles, HelpCircle, MessageSquare, User, Rocket, ChevronRight } from 'lucide-react';
+import { getValidToken, SESSION_EVENT } from '../auth/session';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -8,7 +9,19 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const isAuthenticated = !!localStorage.getItem('vaultToken');
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!getValidToken());
+
+  useEffect(() => {
+    const syncSession = () => setIsAuthenticated(!!getValidToken());
+    window.addEventListener(SESSION_EVENT, syncSession);
+    window.addEventListener('storage', syncSession);
+    window.addEventListener('focus', syncSession);
+    return () => {
+      window.removeEventListener(SESSION_EVENT, syncSession);
+      window.removeEventListener('storage', syncSession);
+      window.removeEventListener('focus', syncSession);
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);

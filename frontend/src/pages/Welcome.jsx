@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Building2, CheckCircle2, ChevronDown, User} from 'lucide-react';
+import { Zap, Building2, ChevronDown, User} from 'lucide-react';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar'; 
 
 const Welcome = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [isYearly, setIsYearly] = useState(true);
   const [hoveredTier, setHoveredTier] = useState(1);
   const [openFaq, setOpenFaq] = useState(2);
 
@@ -207,32 +206,25 @@ const Welcome = () => {
         <div className="max-w-vault mx-auto">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-5xl md:text-6xl font-black mb-8 md:mb-12 tracking-tight md:tracking-wide leading-[1.05] md:leading-tight text-[#123458] font-serif">Professional Tiers</h2>
-            <div className="flex items-center justify-center gap-4 text-sm font-bold">
-              <span className={!isYearly ? "text-[#123458]" : "text-[#123458]/40"}>Monthly</span>
-              <button onClick={() => setIsYearly(!isYearly)} className="w-12 h-6 bg-[#D4C9BE] rounded-full p-1 transition-colors hover:bg-[#D4C9BE]/80">
-                <div className={`w-4 h-4 bg-[#123458] rounded-full transition-transform ${isYearly ? 'translate-x-6' : 'translate-x-0'}`}></div>
-              </button>
-              <span className={isYearly ? "text-[#123458]" : "text-[#123458]/40"}>Yearly <span className="text-[10px] bg-[#123458]/10 text-[#123458] px-2 py-0.5 rounded-full">-50%</span></span>
-            </div>
+            <p className="text-[#526B82]">Start with 1 GB free. Request additional storage from your dashboard.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-center">
             {[
-              { name: "Personal", price: 0, icon: User },
-              { name: "Professional", price: isYearly ? 300 : 600, icon: Zap },
-              { name: "Enterprise", price: 2000, icon: Building2 }
+              { name: "Personal", capacity: "1 GB", icon: User },
+              { name: "Professional", capacity: "50 GB", icon: Zap },
+              { name: "Enterprise", capacity: "Unlimited", icon: Building2 }
             ].map((tier, i) => (
               <div key={i} onMouseEnter={() => setHoveredTier(i)} className={`p-10 rounded-[2.5rem] flex flex-col transition-all duration-500 cursor-default ${hoveredTier === i ? 'bg-[#123458] text-[#F1EFEC] scale-105 shadow-2xl z-10' : 'bg-[#F1EFEC] text-[#030303] border border-[#D4C9BE]'}`}>
                 <div className="mb-8">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 ${hoveredTier === i ? 'bg-white/10' : 'bg-[#123458]/5'}`}><tier.icon size={24} className={hoveredTier === i ? 'text-[#F1EFEC]' : 'text-[#123458]'} /></div>
                   <h3 className="text-xl font-black mb-2">{tier.name}</h3>
-                  <span className="text-4xl font-black">₹{tier.price}</span><span className="text-sm">/mo</span>
+                  <span className="text-4xl font-black">{tier.capacity}</span><span className="text-sm"> storage</span>
                 </div>
                 <ul className="space-y-4 mb-10 flex-1">
-                  {["E2E Encryption", "AI Security Audits", "Cross-Platform Sync", "Priority Support"].map((feat, idx) => (
-                    <li key={idx} className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 size={16} className={hoveredTier === i ? 'text-[#D4C9BE]' : 'text-[#123458]'} />{feat}</li>
-                  ))}
+                  <li className="text-sm">Manage files, folders, and Trash from your dashboard.</li>
+                  <li className="text-sm">{i === 0 ? 'Available when you create an account.' : 'Available by upgrade request after sign in.'}</li>
                 </ul>
-                <button onClick={() => navigate('/register')} className={`w-full py-4 rounded-2xl font-black text-lg transition-all ${hoveredTier === i ? 'bg-[#F1EFEC] text-[#123458] hover:bg-white' : 'bg-[#123458] text-[#F1EFEC] hover:opacity-90'}`}>Select Plan</button>
+                <button onClick={() => navigate(i === 0 ? '/register' : '/login')} className={`w-full py-4 rounded-2xl font-black text-lg transition-all ${hoveredTier === i ? 'bg-[#F1EFEC] text-[#123458] hover:bg-white' : 'bg-[#123458] text-[#F1EFEC] hover:opacity-90'}`}>{i === 0 ? 'Get started' : 'Sign in to request'}</button>
               </div>
             ))}
           </div>

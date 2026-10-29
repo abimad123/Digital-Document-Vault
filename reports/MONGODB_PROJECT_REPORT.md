@@ -4,9 +4,9 @@
 
 **Implementation:** React/Vite, Express/Mongoose, MongoDB, PyMongo, scikit-learn
 
-**Evaluation status:** Reproducible synthetic demo; results from a live vault database must be run separately.
+**Evaluation status:** Reproducible MongoDB-backed synthetic demo; results from real vault files must be run separately.
 
-**Live connection check (18 October 2026):** Mongoose and PyMongo both connected to the configured Atlas database (`test`) and local database (`vaultDB`). Atlas contained 15 file records; 10 were usable for ML (9 below 5 MB, 1 at least 5 MB). The local database had no file records. Real-data model evaluation was not run because the required sample and class counts were not met.
+**Live connection check (29 October 2026):** Mongoose and PyMongo connected to the configured Atlas database (`test`), and PyMongo connected to local MongoDB (`vaultDB`). Atlas contained 16 file records; 11 were usable for ML (10 below 5 MB, 1 at least 5 MB). The local database contained no file records. Real-data model evaluation was not run because the required sample and class counts were not met.
 
 ## 1. Introduction
 
@@ -24,13 +24,13 @@ VaultX is a digital document management prototype. The application stores user a
 
 The operational `files` collection is created by the existing Express/Mongoose backend. Each file document includes `user` (owner ObjectId), `fileName`, `fileType` (MIME type), `fileSize` (legacy display string), `sizeBytes` (new exact numeric size), `isFolder`, `parentId`, and `createdAt`. Folder records have no file size and are excluded from training. The Python projection reads only `fileName`, `fileType`, `fileSize`, `sizeBytes`, and `isFolder`.
 
-For a reproducible course demonstration, `demo_documents()` creates 600 synthetic metadata records with six MIME types: PDF, DOCX, XLSX, JPEG, PNG, and MP3. The random seed is 42. File sizes are sampled from type-specific Gaussian distributions and clipped to a positive minimum. These records can be upserted into a separate `ml_demo_files` collection using `seed-demo`; no synthetic record is put into the application's `files` collection. The generated-only evaluation uses the same deterministic records without MongoDB and is explicitly a **demo result**, not a claim about actual users' documents.
+For a reproducible course demonstration, `demo_documents()` creates 600 synthetic metadata records with six MIME types: PDF, DOCX, XLSX, JPEG, PNG, and MP3. The random seed is 42. File sizes are sampled from type-specific Gaussian distributions and clipped to a positive minimum. On 29 October 2026, `seed-demo` upserted all 600 records into the separate Atlas `ml_demo_files` collection; no synthetic record was put into the application's `files` collection. The model results remain a **demo result**, not a claim about actual users' documents.
 
 ## 4. MongoDB and PyMongo implementation
 
 The application continues to use Mongoose for transactions such as upload and folder creation. The analytics module (`analytics/vault_ml.py`) uses `MongoClient` from PyMongo, validates the connection with `ping`, and reads the `files` or `ml_demo_files` collection. New uploads store `sizeBytes` as a number while retaining `fileSize` for current UI compatibility.
 
-`init-db` creates a compound `files` index on `(user, parentId, createdAt)` for owner and folder views, an `activities` index on `(user, createdAt)` for recent logs, a unique `demoId` index for repeatable upserts, and a descending `createdAt` index for model-run history. `summary` executes a MongoDB aggregation pipeline: `$match` non-folder documents with numeric sizes, `$group` by MIME type to count files and sum/average bytes, and `$sort` by count. MongoDB-backed training writes metrics and source information to `ml_model_runs`. Existing app searches use a case-insensitive regular expression; that search pattern is not fully optimized by the added index.
+`init-db` creates a compound `files` index on `(user, parentId, createdAt)` for owner and folder views, an `activities` index on `(user, createdAt)` for recent logs, a unique `demoId` index for repeatable upserts, and a descending `createdAt` index for model-run history. These indexes were created in Atlas on 29 October 2026. `summary` executes a MongoDB aggregation pipeline: `$match` non-folder documents with numeric sizes, `$group` by MIME type to count files and sum/average bytes, and `$sort` by count. The live demo summary returned 100 records for each of the six MIME types. MongoDB-backed training wrote metrics and source information to `ml_model_runs`. Existing app searches use a case-insensitive regular expression; that search pattern is not fully optimized by the added index.
 
 The database URI is supplied through `MONGO_URI` or `--mongo-uri`, and `--database` can select a database explicitly. The URI should include its database name. The read-only `check` command pings MongoDB and reports the selected database, usable records, class counts, and training eligibility. Commands do not print credentials. The analytics code does not request Cloudinary URLs, passwords, billing data, or file contents.
 
@@ -46,7 +46,7 @@ Two scikit-learn pipelines use the same metadata features. `RandomForestRegresso
 
 ## 7. Evaluation results
 
-Results below come from `analytics/results/metrics.json` after running `train --source generated` with seed 42 and 600 records. They demonstrate the code path on synthetic data. The results must be recomputed with `train --source vault` to make claims about the actual application dataset.
+Results below come from `analytics/results/metrics.json` after running `seed-demo` and `train --source demo` against MongoDB Atlas with seed 42 and 600 records. The MongoDB-backed run saved a record in `ml_model_runs`. An offline `train --source generated` run reproduced the same metric values. Both runs use synthetic data; results must be recomputed with `train --source vault` to make claims about the actual application dataset.
 
 | Metric | Result on synthetic demo test set |
 | --- | ---: |
@@ -79,4 +79,4 @@ The last command requires enough real vault records in both size classes. For an
 
 ## 9. Conclusion
 
-The extension demonstrates a complete MongoDB/PyMongo analytics workflow around the existing document vault: indexed operational data, an aggregation pipeline, reproducible demo data, metadata preprocessing, two trained models, and all six requested evaluation metrics. The reported demo metrics describe synthetic file-size patterns only. A real-data study should collect enough consented file metadata, rerun the held-out evaluation, compare simpler baselines, and examine whether MIME-based predictions are useful for the intended product decision. The application also needs separate security and payment-flow remediation before any production use.
+The extension demonstrates a complete MongoDB/PyMongo analytics workflow around the existing document vault: indexed operational data, a live aggregation pipeline, reproducible demo data in MongoDB, metadata preprocessing, two trained models, and all six requested evaluation metrics. The reported demo metrics describe synthetic file-size patterns only. A real-data study should collect enough consented file metadata, rerun the held-out evaluation, compare simpler baselines, and examine whether MIME-based predictions are useful for the intended product decision. The application also needs separate security and payment-flow remediation before any production use.

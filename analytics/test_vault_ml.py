@@ -30,6 +30,14 @@ class VaultMLTests(unittest.TestCase):
             {"model", "accuracy", "precision", "recall", "f1"},
         )
 
+    def test_training_rejects_a_missing_size_class(self):
+        docs = [
+            {"fileName": f"small_{i}.pdf", "fileType": "application/pdf", "sizeBytes": 1024}
+            for i in range(40)
+        ]
+        with self.assertRaisesRegex(ValueError, "at least 5 files in each size class"):
+            evaluate(docs, "test")
+
     def test_pymongo_indexes_and_aggregation(self):
         database = mongomock.MongoClient().vaultx
         ensure_indexes(database)

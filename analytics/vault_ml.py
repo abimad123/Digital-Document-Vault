@@ -7,7 +7,6 @@ import argparse
 import json
 import os
 import re
-from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -115,7 +114,7 @@ def evaluate(documents, source, seed=42):
     if len(rows) < 40:
         raise ValueError(f"Need at least 40 usable files; found {len(rows)} (skipped {skipped}).")
     labels = [int(size >= THRESHOLD_MB) for size in sizes]
-    if min(Counter(labels).values()) < 5:
+    if min(labels.count(0), labels.count(1)) < 5:
         raise ValueError("Need at least 5 files in each size class (below/at least 5 MB).")
     indexes = list(range(len(rows)))
     train_idx, test_idx = train_test_split(

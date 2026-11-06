@@ -8,6 +8,7 @@ const FileSchema = new mongoose.Schema({
   fileType: { type: String },
   fileSize: { type: String },
   sizeBytes: { type: Number, min: 0 }, // Exact size for MongoDB analytics; fileSize supports older records.
+  category: { type: String, enum: ['Academic', 'Finance', 'Personal', 'Other'], default: null },
   isFolder: { type: Boolean, default: false }, // CRITICAL for your new UI logic
   parentId: { type: String, default: 'root' }, // Used for moving items into folders
   isStarred: { type: Boolean, default: false },

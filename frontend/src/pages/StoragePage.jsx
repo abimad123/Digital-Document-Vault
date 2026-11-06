@@ -10,6 +10,7 @@ const plans = [
   { name: 'Professional', capacity: '50 GB', limit: 51200 },
   { name: 'Enterprise', capacity: 'Unlimited', limit: Infinity }
 ];
+const categories = ['Academic', 'Finance', 'Personal', 'Other'];
 const bytesFor = file => typeof file.sizeBytes === 'number' ? file.sizeBytes : (parseFloat(file.fileSize) || 0) * MB;
 const formatSize = bytes => bytes >= 1024 * MB ? `${(bytes / (1024 * MB)).toFixed(2)} GB` : bytes >= MB ? `${(bytes / MB).toFixed(2)} MB` : `${Math.round(bytes / 1024)} KB`;
 
@@ -34,6 +35,7 @@ export default function StoragePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [insights, setInsights] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -45,6 +47,12 @@ export default function StoragePage() {
       setAccount(me);
       setFiles(all.files || []);
       setPending(request.request);
+      try {
+        await api('/api/insights/snapshot', { method: 'POST' });
+        setInsights(await api('/api/insights'));
+      } catch {
+        setInsights(null);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -92,6 +100,23 @@ export default function StoragePage() {
     }
   };
 
+  const saveCategory = async (fileId, category) => {
+    setBusy(true);
+    setError('');
+    try {
+      const data = await api(`/api/insights/files/${fileId}/category`, { method: 'PUT', body: JSON.stringify({ category }) });
+      const wasLabeled = files.some(file => file._id === fileId && file.category);
+      setFiles(previous => previous.map(file => file._id === fileId ? data.file : file));
+      setInsights(previous => previous ? { ...previous, labeledCount: previous.labeledCount + (wasLabeled ? 0 : 1),
+        suggestions: previous.suggestions.filter(item => String(item.fileId) !== fileId) } : previous);
+      setNotice('Category saved. Confirmed labels help train future suggestions.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <main className="min-w-0 flex-1 overflow-y-auto bg-[#F5F7F9] p-4 text-[#123458] sm:p-6 lg:p-9">
       <div className="mx-auto max-w-6xl space-y-6 pb-10">
@@ -118,6 +143,23 @@ export default function StoragePage() {
             <section className={card}><h2 className="font-serif text-2xl font-bold">Largest active files</h2><div className="mt-4 divide-y divide-[#E7EDF2]">{largest.length ? largest.map(file => <div key={file._id} className="flex min-w-0 items-center gap-3 py-3"><FileText size={17} className="shrink-0 text-[#5F7890]" /><span className="min-w-0 flex-1 truncate text-sm font-medium" title={file.fileName}>{file.fileName}</span><span className="shrink-0 text-sm font-semibold">{formatSize(bytesFor(file))}</span></div>) : <p className="py-4 text-sm text-[#60778D]">No active files yet.</p>}</div><Link to="/dashboard/documents" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#123458] hover:underline">Manage files <ArrowRight size={16} /></Link></section>
           </div>
           <section className={card}><div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-serif text-2xl font-bold">Storage plans</h2><p className="mt-2 text-sm text-[#526B82]">Upgrade requests are reviewed manually. Your plan changes only after approval; no card or payment is collected here.</p></div>{pending && <span className="rounded-full bg-amber-100 px-3 py-1.5 text-sm font-bold text-amber-900">{pending.plan} request pending</span>}</div><div className="mt-6 grid gap-4 md:grid-cols-3">{plans.map((plan, index) => <div key={plan.name} className={`flex flex-col rounded-2xl border p-5 ${index === currentIndex ? 'border-[#123458] bg-[#F1F6FA]' : 'border-[#DCE5ED]'}`}><p className="text-sm font-bold">{plan.name}</p><p className="mt-2 text-2xl font-bold">{plan.capacity}</p><p className="mt-2 flex-1 text-sm text-[#60778D]">Storage capacity</p><button disabled={index <= currentIndex || !!pending || busy} onClick={() => requestUpgrade(plan.name)} className="mt-5 min-h-11 rounded-xl bg-[#123458] px-4 text-sm font-bold text-white disabled:cursor-default disabled:bg-[#E4EBF1] disabled:text-[#5B7185]">{index === currentIndex ? 'Current plan' : pending ? 'Request pending' : index > currentIndex ? 'Request upgrade' : 'Included in your plan'}</button></div>)}</div></section>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <section className={card}>
+              <h2 className="font-serif text-2xl font-bold">30-day storage forecast</h2>
+              {insights?.forecast ? <><p className="mt-4 text-3xl font-bold">{formatSize(insights.forecast.predictedBytes)}</p><p className="mt-2 text-sm text-[#526B82]">Estimated storage 30 days after {insights.forecast.asOf}. Test MAE: {insights.forecast.modelMetrics.maeMB} MB.</p></> : <p className="mt-4 text-sm text-[#526B82]">Collecting real daily storage history. {insights?.snapshotCount ?? 0} day(s) recorded for this account. A forecast appears when enough 30-day examples exist.</p>}
+            </section>
+            <section className={card}>
+              <h2 className="font-serif text-2xl font-bold">Document categories</h2>
+              <p className="mt-2 text-sm text-[#526B82]">Choose a category for your files. Confirmed labels train suggestions from real metadata. {insights?.labeledCount ?? 0} of your files labeled.</p>
+              <div className="mt-4 max-h-80 divide-y divide-[#E7EDF2] overflow-y-auto">
+                {files.filter(file => !file.isFolder && !file.trashedAt).map(file => {
+                  const suggestion = insights?.suggestions?.find(item => String(item.fileId) === file._id);
+                  return <div key={file._id} className="flex flex-wrap items-center gap-2 py-2"><span className="min-w-0 flex-1 truncate text-sm" title={file.fileName}>{file.fileName}</span>{suggestion && !file.category && <span className="text-xs text-[#526B82]">Suggested: {suggestion.category}</span>}<select aria-label={`Category for ${file.fileName}`} value={file.category || ''} disabled={busy} onChange={event => saveCategory(file._id, event.target.value)} className="min-h-10 rounded-lg border border-[#D5E0E9] bg-white px-2 text-sm"><option value="">Choose category</option>{categories.map(category => <option key={category} value={category}>{category}</option>)}</select></div>;
+                })}
+              </div>
+              <p className="mt-3 text-xs text-[#60778D]">Suggestions appear after the classifier is trained on enough confirmed categories.</p>
+            </section>
+          </div>
         </>}
       </div>
     </main>

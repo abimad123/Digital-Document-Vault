@@ -39,6 +39,8 @@ For Vercel hosting, both the repository root and `frontend/` include SPA rewrite
 
 Storage management shows actual file usage, including Trash, and supports upgrade requests stored in MongoDB. Requests require manual review; there is no payment processor or automatic tier activation. New accounts start on Personal (1 GB), and signup does not collect card details. The legacy `/api/auth/upgrade-plan` endpoint rejects direct tier changes.
 
+The storage page also starts collecting one real usage snapshot per account per day and lets users confirm a category for each file. `analytics/smart_insights.py` can train a Random Forest classifier for category suggestions from confirmed real labels and a Random Forest regressor for 30-day storage forecasts from real snapshot history. It checks data sufficiency and withholds forecasts that fail a no-growth baseline. On 6 November 2026, the configured Atlas database had 11 real file records, zero confirmed labels, and zero snapshots, so neither new model has a real-data score yet. See `analytics/README.md` for commands and criteria.
+
 ## Run the MongoDB and ML project
 
 The Python module reads **metadata only**: filename, MIME type, size, and folder status. It does not read document contents or account/payment fields. The regression model estimates file size in MB; the classification model predicts whether a file is at least 5 MB. Models use file type, extension, and filename length, with a fixed 75/25 stratified split.

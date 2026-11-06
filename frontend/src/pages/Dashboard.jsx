@@ -161,6 +161,9 @@ const Dashboard = ({ onLogout }) => {
     try {
       const result = await request(path, method, body);
       await refresh();
+      if (path.startsWith('/api/files/')) {
+        await request('/api/insights/snapshot', 'POST').catch(() => {});
+      }
       if (successMessage) notify(successMessage);
       return result;
     } catch (error) {
@@ -222,7 +225,10 @@ const Dashboard = ({ onLogout }) => {
       processed += 1;
       setUploadProgress({ done: processed, total: selected.length });
     }
-    try { await refresh(); } catch (error) { lastError = error.message; }
+    try {
+      await refresh();
+      if (uploaded) await request('/api/insights/snapshot', 'POST').catch(() => {});
+    } catch (error) { lastError = error.message; }
     setBusy(false);
     setUploadProgress(null);
     notify(lastError ? `${uploaded} uploaded. ${lastError}` : `${uploaded} file${uploaded === 1 ? '' : 's'} uploaded`, lastError ? 'error' : 'success');

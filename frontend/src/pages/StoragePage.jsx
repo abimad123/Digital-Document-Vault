@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, FileText, HardDrive, Image, Loader2, RefreshCw, Trash2 } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 import { clearSession, getValidToken } from '../auth/session';
+import forecastClassroomDemo from '../data/forecastClassroomDemo.json';
 
 const MB = 1024 * 1024;
 const plans = [
@@ -36,6 +37,7 @@ export default function StoragePage() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [insights, setInsights] = useState(null);
+  const [showForecastDemo, setShowForecastDemo] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -147,6 +149,13 @@ export default function StoragePage() {
             <section className={`${card} self-start`}>
               <h2 className="font-serif text-2xl font-bold">30-day storage forecast</h2>
               {insights?.forecast ? <><p className="mt-4 text-3xl font-bold">{formatSize(insights.forecast.predictedBytes)}</p><p className="mt-2 text-sm text-[#526B82]">Estimated storage 30 days after {insights.forecast.asOf}. Test MAE: {insights.forecast.modelMetrics.maeMB} MB.</p></> : <><p className="mt-4 text-sm font-bold text-[#123458]">Forecast is building</p><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-xl bg-[#F1F6FA] p-3"><p className="text-xl font-bold">{formatSize(usage.total)}</p><p className="text-xs text-[#526B82]">Storage used now</p></div><div className="rounded-xl bg-[#F1F6FA] p-3"><p className="text-xl font-bold">{insights?.snapshotCount ?? '—'}</p><p className="text-xs text-[#526B82]">Days recorded</p></div></div><p className="mt-4 text-sm text-[#526B82]">Uploading more files today updates today’s total. It does not create more days of history. The model needs real snapshots 30 days apart, enough examples across users, and a successful training run before it can show a forecast.</p></>}
+              <button type="button" aria-expanded={showForecastDemo} onClick={() => setShowForecastDemo(value => !value)} className="mt-5 min-h-11 rounded-xl border border-[#B9CAD8] bg-[#F1F6FA] px-4 text-sm font-bold text-[#123458] hover:bg-[#E5EFF6]">{showForecastDemo ? 'Hide classroom demo' : 'View classroom demo'}</button>
+              {showForecastDemo && <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-[#123458]">
+                <p className="font-bold text-amber-900">Synthetic classroom demo · not your account forecast</p>
+                <p className="mt-2 text-[#526B82]">A RandomForestRegressor was trained on generated daily storage histories for {forecastClassroomDemo.sampleAccounts} sample accounts. No sample history was added to MongoDB.</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2"><div className="rounded-xl bg-white p-3"><p className="text-xs text-[#526B82]">Sample account on {forecastClassroomDemo.asOf}</p><p className="mt-1 text-xl font-bold">{forecastClassroomDemo.currentMB} MB</p></div><div className="rounded-xl bg-white p-3"><p className="text-xs text-[#526B82]">Model estimate for {forecastClassroomDemo.forecastFor}</p><p className="mt-1 text-xl font-bold">{forecastClassroomDemo.predictedMB} MB</p></div></div>
+                <p className="mt-3 text-xs text-[#526B82]">Held-out synthetic test: {forecastClassroomDemo.testExamples} examples · R² {forecastClassroomDemo.r2} · MAE {forecastClassroomDemo.maeMB} MB · no-growth baseline MAE {forecastClassroomDemo.baselineMAEMB} MB. These scores do not measure performance on real user history.</p>
+              </div>}
             </section>
             <section className={card}>
               <h2 className="font-serif text-2xl font-bold">Document categories</h2>

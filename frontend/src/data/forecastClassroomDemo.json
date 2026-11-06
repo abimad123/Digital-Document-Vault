@@ -1,0 +1,17 @@
+{
+  "source": "synthetic_classroom_demo",
+  "randomSeed": 42,
+  "model": "RandomForestRegressor",
+  "sampleAccounts": 36,
+  "daysPerAccount": 76,
+  "trainingExamples": 1324,
+  "testExamples": 332,
+  "r2": 0.9852,
+  "maeMB": 13.07,
+  "baselineMAEMB": 47.1,
+  "asOf": "2026-11-06",
+  "forecastFor": "2026-12-06",
+  "currentMB": 349.6,
+  "predictedMB": 385.6,
+  "passesQualityGate": true
+}

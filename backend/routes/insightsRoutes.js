@@ -3,9 +3,24 @@ const mongoose = require('mongoose');
 const auth = require('../middleware/authMiddleware');
 const File = require('../models/File');
 const StorageSnapshot = require('../models/StorageSnapshot');
+const { predictCategory } = require('../utils/categoryModel');
 
 const router = express.Router();
 router.use(auth);
+
+router.post('/suggest-categories', async (req, res) => {
+  try {
+    const files = req.body?.files;
+    if (!Array.isArray(files) || files.length > 20 || files.some(file => typeof file.name !== 'string' || file.name.length > 255)) {
+      return res.status(400).json({ success: false, message: 'Choose up to 20 valid files.' });
+    }
+    const model = await mongoose.connection.db.collection('ml_category_models').findOne({ task: 'category_suggestion' });
+    res.json({ success: true, source: model ? 'trained_model' : 'unavailable',
+      suggestions: model ? files.map(file => predictCategory(model, file.name, file.type)) : [] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Category suggestions are unavailable.' });
+  }
+});
 
 router.post('/snapshot', async (req, res) => {
   try {

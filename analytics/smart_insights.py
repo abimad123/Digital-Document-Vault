@@ -41,7 +41,7 @@ def train_categories(db, output):
     y = [f['category'] for f in labeled]
     train, test = train_test_split(list(range(len(y))), test_size=.25, random_state=42, stratify=y)
     model = Pipeline([('features', DictVectorizer()), ('forest', RandomForestClassifier(
-        n_estimators=150, min_samples_leaf=2, class_weight='balanced', random_state=42))])
+        n_estimators=150, max_depth=10, min_samples_leaf=2, class_weight='balanced', random_state=42))])
     model.fit([x[i] for i in train], [y[i] for i in train])
     actual = [y[i] for i in test]
     predicted = model.predict([x[i] for i in test])
@@ -52,6 +52,20 @@ def train_categories(db, output):
     run = db.ml_model_runs.insert_one({'task': 'category_suggestion', 'source': 'vault',
         'createdAt': datetime.now(timezone.utc), 'trainCount': len(train), 'testCount': len(test),
         'categoryCounts': counts, 'metrics': metrics})
+    vectorizer = model.named_steps['features']
+    forest = model.named_steps['forest']
+    export = {'task': 'category_suggestion', 'runId': str(run.inserted_id),
+              'classes': [str(value) for value in forest.classes_],
+              'features': [str(value) for value in vectorizer.get_feature_names_out()],
+              'trees': []}
+    for estimator in forest.estimators_:
+        tree = estimator.tree_
+        export['trees'].append({
+            'left': tree.children_left.tolist(), 'right': tree.children_right.tolist(),
+            'feature': tree.feature.tolist(), 'threshold': tree.threshold.tolist(),
+            'value': [node[0].tolist() for node in tree.value]
+        })
+    db.ml_category_models.replace_one({'task': 'category_suggestion'}, export, upsert=True)
     output.mkdir(parents=True, exist_ok=True)
     dump(model, output / 'category_classifier.joblib')
     unlabeled = [f for f in files if f.get('category') not in CATEGORIES]

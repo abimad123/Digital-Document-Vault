@@ -65,6 +65,19 @@ test('upload stores a confirmed category with the real file metadata', async () 
   } finally { File.create = originalCreate; }
 });
 
+test('upload remains available when an older client sends no category', async () => {
+  const originalCreate = File.create;
+  let saved;
+  File.create = async values => { saved = values; return { ...values, _id: IDS.file }; };
+  try {
+    const res = await invoke(action('/upload', 'post'), {}, { parentId: 'root' }, {}, {
+      file: { filename: 'vault_docs/print', originalname: 'Print.pdf', mimetype: 'application/pdf', size: 1024, path: 'https://example.com/file' }
+    });
+    assert.equal(res.code, 201);
+    assert.equal(saved.category, null);
+  } finally { File.create = originalCreate; }
+});
+
 test('search escapes regular-expression characters and stays owner scoped', async () => {
   const original = File.find;
   let filter;

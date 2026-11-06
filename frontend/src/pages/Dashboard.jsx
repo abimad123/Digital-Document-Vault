@@ -10,14 +10,15 @@ import Sidebar from '../components/Sidebar';
 import Toast from '../components/Toast';
 import MoveModal from '../components/MoveModal';
 import NameDialog from '../components/NameDialog';
+import UploadCategoryDialog from '../components/UploadCategoryDialog';
 import Profile from './ProfilePage';
 import StoragePage from './StoragePage';
 import ActivityLog from './ActivityLog';
 import { API_BASE_URL } from '../config';
 import { clearSession, getValidToken } from '../auth/session';
+import { suggestCategory } from '../utils/categorySuggestion';
 
 const viewNames = { documents: 'My Drive', starred: 'Starred', recent: 'Recent', trash: 'Trash' };
-const documentCategories = ['Academic', 'Finance', 'Personal', 'Other'];
 const formatDate = (value) => value ? new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 const sizeBytesFor = (file) => typeof file.sizeBytes === 'number'
   ? file.sizeBytes
@@ -181,8 +182,22 @@ const Dashboard = ({ onLogout }) => {
   };
 
   const queueUpload = fileList => {
-    const selected = Array.from(fileList || []).map((file, index) => ({ file, category: '', id: index }));
-    if (selected.length && !busy) setUploadQueue(selected);
+    const selected = Array.from(fileList || []).map((file, index) => {
+      const suggestion = suggestCategory(file.name);
+      return { file, category: suggestion, suggestion, source: 'filename', id: index, userEdited: false };
+    });
+    if (!selected.length || busy) return;
+    setUploadQueue(selected);
+    request('/api/insights/suggest-categories', 'POST', {
+      files: selected.map(item => ({ name: item.file.name, type: item.file.type }))
+    }).then(result => {
+      if (result.source !== 'trained_model') return;
+      setUploadQueue(queue => queue && queue.length === selected.length && queue.every((item, index) => item.file === selected[index].file)
+        ? queue.map((item, index) => item.userEdited || !result.suggestions[index]?.category ? item : {
+          ...item, category: result.suggestions[index].category,
+          suggestion: result.suggestions[index].category, source: 'model'
+        }) : queue);
+    }).catch(() => {});
   };
 
   const uploadFiles = async selected => {
@@ -197,7 +212,7 @@ const Dashboard = ({ onLogout }) => {
       const form = new FormData();
       form.append('file', file);
       form.append('parentId', folderId);
-      form.append('category', category);
+      if (category) form.append('category', category);
       try {
         await request('/api/files/upload', 'POST', form);
         uploaded += 1;
@@ -443,7 +458,7 @@ const Dashboard = ({ onLogout }) => {
 
     <MoveModal isOpen={Boolean(moveItem)} onClose={() => setMoveItem(null)} folders={moveFolders} excludedIds={excludedIds} onConfirm={confirmMove} fileName={moveItem?.bulk ? `${selectedIds.length} selected items` : moveItem?.file?.fileName} busy={busy} />
     <NameDialog dialog={nameDialog} onClose={() => setNameDialog(null)} onSubmit={submitName} busy={busy} />
-    {uploadQueue && <div className="fixed inset-0 z-[95] flex items-center justify-center bg-[#123458]/55 p-4" onClick={() => setUploadQueue(null)}><div role="dialog" aria-modal="true" aria-labelledby="upload-category-title" onClick={event => event.stopPropagation()} className="flex max-h-[85vh] w-full max-w-xl flex-col rounded-2xl bg-white p-5 shadow-2xl sm:p-6"><div className="flex items-start justify-between gap-3"><div><h2 id="upload-category-title" className="font-serif text-2xl font-bold text-[#123458]">Upload files</h2><p className="mt-1 text-sm text-[#52677C]">Choose a category for each file before uploading.</p></div><button onClick={() => setUploadQueue(null)} aria-label="Cancel upload" className="rounded-lg p-2 text-[#123458] hover:bg-[#F1F5F8]"><X size={20} /></button></div><div className="mt-5 overflow-y-auto"><div className="mb-3 flex flex-wrap items-center gap-2"><span className="text-sm font-semibold text-[#123458]">Apply to all</span><select aria-label="Apply category to all files" value="" onChange={event => setUploadQueue(queue => queue.map(item => ({ ...item, category: event.target.value })))} className="min-h-10 rounded-lg border border-[#CAD7E0] bg-white px-3 text-sm text-[#123458]"><option value="">Choose category</option>{documentCategories.map(category => <option key={category} value={category}>{category}</option>)}</select></div>{uploadQueue.map((item, index) => <div key={item.id} className="flex flex-wrap items-center gap-2 border-t border-[#E8EDF1] py-3"><span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#123458]" title={item.file.name}>{item.file.name}</span><select aria-label={`Category for ${item.file.name}`} value={item.category} onChange={event => setUploadQueue(queue => queue.map((entry, position) => position === index ? { ...entry, category: event.target.value } : entry))} className="min-h-10 rounded-lg border border-[#CAD7E0] bg-white px-3 text-sm text-[#123458]"><option value="">Choose category</option>{documentCategories.map(category => <option key={category} value={category}>{category}</option>)}</select></div>)}</div><div className="mt-5 flex justify-end gap-2"><button onClick={() => setUploadQueue(null)} className="min-h-11 rounded-xl border border-[#CAD7E0] px-4 text-sm font-semibold text-[#123458]">Cancel</button><button disabled={uploadQueue.some(item => !item.category)} onClick={() => uploadFiles(uploadQueue)} className="min-h-11 rounded-xl bg-[#123458] px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">Upload {uploadQueue.length} {uploadQueue.length === 1 ? 'file' : 'files'}</button></div></div></div>}
+    <UploadCategoryDialog queue={uploadQueue} onChange={setUploadQueue} onCancel={() => setUploadQueue(null)} onUpload={() => uploadFiles(uploadQueue)} />
     {details && <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#123458]/50 p-4" onClick={() => setDetails(null)}><div role="dialog" aria-modal="true" aria-label="Item details" onClick={event => event.stopPropagation()} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"><div className="mb-5 flex items-center justify-between"><h2 className="font-serif text-2xl font-bold text-[#123458]">Item details</h2><button onClick={() => setDetails(null)} aria-label="Close details"><X size={20} /></button></div><dl className="space-y-3 text-sm text-[#123458]"><div><dt className="font-bold">Name</dt><dd className="break-all">{details.fileName}</dd></div><div><dt className="font-bold">Type</dt><dd>{details.isFolder ? 'Folder' : details.fileType || 'File'}</dd></div><div><dt className="font-bold">Size</dt><dd>{formatSize(details)}</dd></div><div><dt className="font-bold">Created</dt><dd>{formatDate(details.createdAt)}</dd></div><div><dt className="font-bold">Location</dt><dd>{details.parentId === 'root' ? 'My Drive' : folderMap.get(details.parentId)?.fileName || 'Folder'}</dd></div></dl></div></div>}
     {toast && <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
   </div>;

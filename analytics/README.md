@@ -15,7 +15,7 @@ For tests, install `requirements-dev.txt` and run `python -m unittest discover -
 
 ## Smart Vault models on real data
 
-The upload dialog now requires a category for each new file. The storage page records one real usage snapshot per account per day when opened and lets a user label older files. Categories are Academic, Finance, Personal, and Other. The backend stores confirmed labels in `files.category` and daily totals in `storage_snapshots`. It does not label documents automatically before a model is trained.
+The upload dialog recommends a category from clear filename words and lets the user accept or correct it. Files with no clear hint can upload without a category. Once a real-data classifier is trained, the training command exports its trees to `ml_category_models`, and the upload dialog uses that model for suggestions. The storage page records one real usage snapshot per account per day when opened and lets a user label older files. Categories are Academic, Finance, Personal, and Other. The backend stores accepted labels in `files.category` and daily totals in `storage_snapshots`.
 
 With `MONGO_URI` set to the same database as the API, run:
 

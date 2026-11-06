@@ -86,6 +86,12 @@ router.post('/create-folder', auth, async (req, res) => {
 router.post('/upload', auth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'Choose a file to upload.' });
+    const category = String(req.body?.category || '').trim();
+    if (!['Academic', 'Finance', 'Personal', 'Other'].includes(category)) {
+      const resource_type = req.file.mimetype?.startsWith('image/') ? 'image' : 'raw';
+      await cloudinary.uploader.destroy(req.file.filename, { resource_type });
+      return res.status(400).json({ success: false, message: 'Choose a document category before uploading.' });
+    }
     const parentId = req.body.parentId || 'root';
     if (!(await validParent(req, parentId))) {
       const resource_type = req.file.mimetype?.startsWith('image/') ? 'image' : 'raw';
@@ -97,7 +103,7 @@ router.post('/upload', auth, upload.single('file'), async (req, res) => {
       fileUrl: req.file.path, publicId: req.file.filename,
       fileType: req.file.mimetype,
       fileSize: (req.file.size / 1024 / 1024).toFixed(2) + ' MB',
-      sizeBytes: req.file.size, parentId, isFolder: false
+      sizeBytes: req.file.size, category, parentId, isFolder: false
     });
     await logActivity(req.user.id, 'UPLOAD', `Uploaded file: ${file.fileName}`);
     res.status(201).json({ success: true, file });

@@ -15,7 +15,7 @@ For tests, install `requirements-dev.txt` and run `python -m unittest discover -
 
 ## Smart Vault models on real data
 
-The storage page now records one real usage snapshot per account per day when opened and lets a user confirm a category for each active file. Categories are Academic, Finance, Personal, and Other. The backend stores confirmed labels in `files.category` and daily totals in `storage_snapshots`. It does not label documents automatically before a model is trained.
+The upload dialog now requires a category for each new file. The storage page records one real usage snapshot per account per day when opened and lets a user label older files. Categories are Academic, Finance, Personal, and Other. The backend stores confirmed labels in `files.category` and daily totals in `storage_snapshots`. It does not label documents automatically before a model is trained.
 
 With `MONGO_URI` set to the same database as the API, run:
 

@@ -17,6 +17,7 @@ import { API_BASE_URL } from '../config';
 import { clearSession, getValidToken } from '../auth/session';
 
 const viewNames = { documents: 'My Drive', starred: 'Starred', recent: 'Recent', trash: 'Trash' };
+const documentCategories = ['Academic', 'Finance', 'Personal', 'Other'];
 const formatDate = (value) => value ? new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 const sizeBytesFor = (file) => typeof file.sizeBytes === 'number'
   ? file.sizeBytes
@@ -74,6 +75,7 @@ const Dashboard = ({ onLogout }) => {
   const [toast, setToast] = useState(null);
   const [nameDialog, setNameDialog] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null);
+  const [uploadQueue, setUploadQueue] = useState(null);
   const fileInputRef = useRef(null);
 
   const notify = (message, type = 'success') => setToast({ message, type, id: Date.now() });
@@ -178,18 +180,24 @@ const Dashboard = ({ onLogout }) => {
     if (result) setNameDialog(null);
   };
 
-  const uploadFiles = async (fileList) => {
-    const selected = [...fileList];
+  const queueUpload = fileList => {
+    const selected = Array.from(fileList || []).map((file, index) => ({ file, category: '', id: index }));
+    if (selected.length && !busy) setUploadQueue(selected);
+  };
+
+  const uploadFiles = async selected => {
     if (!selected.length) return;
+    setUploadQueue(null);
     setBusy(true);
     setUploadProgress({ done: 0, total: selected.length });
     let uploaded = 0;
     let processed = 0;
     let lastError = '';
-    for (const file of selected) {
+    for (const { file, category } of selected) {
       const form = new FormData();
       form.append('file', file);
       form.append('parentId', folderId);
+      form.append('category', category);
       try {
         await request('/api/files/upload', 'POST', form);
         uploaded += 1;
@@ -203,6 +211,11 @@ const Dashboard = ({ onLogout }) => {
     setBusy(false);
     setUploadProgress(null);
     notify(lastError ? `${uploaded} uploaded. ${lastError}` : `${uploaded} file${uploaded === 1 ? '' : 's'} uploaded`, lastError ? 'error' : 'success');
+  };
+
+  const updateCategory = async (file, category) => {
+    const result = await perform(`/api/insights/files/${file._id}/category`, 'PUT', { category }, 'Category updated');
+    if (result) setDetails(result.file);
   };
 
   const openItem = (file) => {
@@ -359,11 +372,11 @@ const Dashboard = ({ onLogout }) => {
   );
 
   const driveView = () => (
-    <main className="min-h-0 flex-1 overflow-y-auto bg-[#F7F9FB] px-4 pb-14 pt-6 sm:px-6 lg:px-8" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); if (view === 'documents' && event.dataTransfer.files.length) uploadFiles(event.dataTransfer.files); }} onClick={() => menuId && setMenuId(null)}>
+    <main className="min-h-0 flex-1 overflow-y-auto bg-[#F7F9FB] px-4 pb-14 pt-6 sm:px-6 lg:px-8" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); if (view === 'documents' && event.dataTransfer.files.length) queueUpload(event.dataTransfer.files); }} onClick={() => menuId && setMenuId(null)}>
       <div className="mx-auto max-w-[1500px]">
         <div className="mb-7 flex flex-wrap items-end justify-between gap-5">
           <div><p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#526E85]">Your workspace</p><h1 className="font-serif text-3xl font-bold text-[#123458] sm:text-4xl">{viewNames[view] || 'My Drive'}</h1><p className="mt-2 text-sm text-[#60758A]">{view === 'trash' ? 'Restore items or remove them permanently.' : view === 'starred' ? 'Keep your most important files close.' : view === 'recent' ? 'Files you worked with most recently.' : 'Organize and access everything in your vault.'}</p></div>
-          {view === 'documents' && <div className="flex w-full flex-wrap gap-2 sm:w-auto"><button onClick={createFolder} disabled={busy} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#CAD7E0] bg-white px-4 py-3 text-sm font-semibold text-[#123458] transition hover:bg-[#EAF2F6] disabled:opacity-50 sm:flex-none"><FolderPlus size={17} /> New folder</button><button onClick={() => fileInputRef.current?.click()} disabled={busy} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#123458] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1A4A70] disabled:opacity-50 sm:flex-none"><CloudUpload size={17} /> Upload files</button><input ref={fileInputRef} type="file" multiple className="hidden" onChange={event => { uploadFiles(event.target.files); event.target.value = ''; }} /></div>}
+          {view === 'documents' && <div className="flex w-full flex-wrap gap-2 sm:w-auto"><button onClick={createFolder} disabled={busy} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#CAD7E0] bg-white px-4 py-3 text-sm font-semibold text-[#123458] transition hover:bg-[#EAF2F6] disabled:opacity-50 sm:flex-none"><FolderPlus size={17} /> New folder</button><button onClick={() => fileInputRef.current?.click()} disabled={busy} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#123458] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#1A4A70] disabled:opacity-50 sm:flex-none"><CloudUpload size={17} /> Upload files</button><input ref={fileInputRef} type="file" multiple className="hidden" onChange={event => { queueUpload(event.target.files); event.target.value = ''; }} /></div>}
         </div>
 
         {view === 'documents' && folderId === 'root' && <div className="mb-7 grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -430,6 +443,7 @@ const Dashboard = ({ onLogout }) => {
 
     <MoveModal isOpen={Boolean(moveItem)} onClose={() => setMoveItem(null)} folders={moveFolders} excludedIds={excludedIds} onConfirm={confirmMove} fileName={moveItem?.bulk ? `${selectedIds.length} selected items` : moveItem?.file?.fileName} busy={busy} />
     <NameDialog dialog={nameDialog} onClose={() => setNameDialog(null)} onSubmit={submitName} busy={busy} />
+    {uploadQueue && <div className="fixed inset-0 z-[95] flex items-center justify-center bg-[#123458]/55 p-4" onClick={() => setUploadQueue(null)}><div role="dialog" aria-modal="true" aria-labelledby="upload-category-title" onClick={event => event.stopPropagation()} className="flex max-h-[85vh] w-full max-w-xl flex-col rounded-2xl bg-white p-5 shadow-2xl sm:p-6"><div className="flex items-start justify-between gap-3"><div><h2 id="upload-category-title" className="font-serif text-2xl font-bold text-[#123458]">Upload files</h2><p className="mt-1 text-sm text-[#52677C]">Choose a category for each file before uploading.</p></div><button onClick={() => setUploadQueue(null)} aria-label="Cancel upload" className="rounded-lg p-2 text-[#123458] hover:bg-[#F1F5F8]"><X size={20} /></button></div><div className="mt-5 overflow-y-auto"><div className="mb-3 flex flex-wrap items-center gap-2"><span className="text-sm font-semibold text-[#123458]">Apply to all</span><select aria-label="Apply category to all files" value="" onChange={event => setUploadQueue(queue => queue.map(item => ({ ...item, category: event.target.value })))} className="min-h-10 rounded-lg border border-[#CAD7E0] bg-white px-3 text-sm text-[#123458]"><option value="">Choose category</option>{documentCategories.map(category => <option key={category} value={category}>{category}</option>)}</select></div>{uploadQueue.map((item, index) => <div key={item.id} className="flex flex-wrap items-center gap-2 border-t border-[#E8EDF1] py-3"><span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#123458]" title={item.file.name}>{item.file.name}</span><select aria-label={`Category for ${item.file.name}`} value={item.category} onChange={event => setUploadQueue(queue => queue.map((entry, position) => position === index ? { ...entry, category: event.target.value } : entry))} className="min-h-10 rounded-lg border border-[#CAD7E0] bg-white px-3 text-sm text-[#123458]"><option value="">Choose category</option>{documentCategories.map(category => <option key={category} value={category}>{category}</option>)}</select></div>)}</div><div className="mt-5 flex justify-end gap-2"><button onClick={() => setUploadQueue(null)} className="min-h-11 rounded-xl border border-[#CAD7E0] px-4 text-sm font-semibold text-[#123458]">Cancel</button><button disabled={uploadQueue.some(item => !item.category)} onClick={() => uploadFiles(uploadQueue)} className="min-h-11 rounded-xl bg-[#123458] px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">Upload {uploadQueue.length} {uploadQueue.length === 1 ? 'file' : 'files'}</button></div></div></div>}
     {details && <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#123458]/50 p-4" onClick={() => setDetails(null)}><div role="dialog" aria-modal="true" aria-label="Item details" onClick={event => event.stopPropagation()} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"><div className="mb-5 flex items-center justify-between"><h2 className="font-serif text-2xl font-bold text-[#123458]">Item details</h2><button onClick={() => setDetails(null)} aria-label="Close details"><X size={20} /></button></div><dl className="space-y-3 text-sm text-[#123458]"><div><dt className="font-bold">Name</dt><dd className="break-all">{details.fileName}</dd></div><div><dt className="font-bold">Type</dt><dd>{details.isFolder ? 'Folder' : details.fileType || 'File'}</dd></div><div><dt className="font-bold">Size</dt><dd>{formatSize(details)}</dd></div><div><dt className="font-bold">Created</dt><dd>{formatDate(details.createdAt)}</dd></div><div><dt className="font-bold">Location</dt><dd>{details.parentId === 'root' ? 'My Drive' : folderMap.get(details.parentId)?.fileName || 'Folder'}</dd></div></dl></div></div>}
     {toast && <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
   </div>;

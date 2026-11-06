@@ -38,7 +38,7 @@ test('upload rejects an invalid parent and removes the already uploaded cloud as
   File.findOne = async () => null;
   cloudinary.uploader.destroy = async (id, options) => { destroyed = { id, options }; };
   try {
-    const res = await invoke(action('/upload', 'post'), {}, { parentId: IDS.child }, {}, {
+    const res = await invoke(action('/upload', 'post'), {}, { parentId: IDS.child, category: 'Academic' }, {}, {
       file: { filename: 'vault_docs/test', mimetype: 'image/png' }
     });
     assert.equal(res.code, 400);
@@ -48,6 +48,21 @@ test('upload rejects an invalid parent and removes the already uploaded cloud as
     File.findOne = originalFindOne;
     cloudinary.uploader.destroy = originalDestroy;
   }
+});
+
+test('upload stores a confirmed category with the real file metadata', async () => {
+  const originalCreate = File.create;
+  let saved;
+  File.create = async values => { saved = values; return { ...values, _id: IDS.file }; };
+  try {
+    const res = await invoke(action('/upload', 'post'), {}, { parentId: 'root', category: 'Finance' }, {}, {
+      file: { filename: 'vault_docs/invoice', originalname: 'invoice.pdf', mimetype: 'application/pdf', size: 2048, path: 'https://example.com/file' }
+    });
+    assert.equal(res.code, 201);
+    assert.equal(saved.category, 'Finance');
+    assert.equal(saved.sizeBytes, 2048);
+    assert.equal(saved.user, IDS.owner);
+  } finally { File.create = originalCreate; }
 });
 
 test('search escapes regular-expression characters and stays owner scoped', async () => {
